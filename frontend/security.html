@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Center & Blockchain Audit</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <span class="brand-badge" style="background-color: #b91c1c;">SECURITY</span>
+      <span>National Security & Audit Logs</span>
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/government.html" class="nav-link">Admin Console</a>
+      <a href="/government.html?tab=verify" class="nav-link">Gov Verification</a>
+      <a href="/security.html" class="nav-link active">Blockchain & Security</a>
+      <div id="nav-user"></div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="card" style="border-left: 4px solid var(--danger);">
+      <h2 class="card-title">🛡️ Security Dashboard & Cryptographic Audit</h2>
+      <p class="card-subtitle">
+        Monitor system access logs, rate-limiting status, and run interactive blockchain tampering simulations.
+      </p>
+    </div>
+
+    <!-- Tampering & Integrity Testing Demonstration -->
+    <div class="card">
+      <h3 class="card-title">🧪 Attack Simulation: Blockchain Tamper Detection</h3>
+      <p class="card-subtitle">
+        Demonstrate how modifying a historical block triggers an instant cryptographic validation failure.
+      </p>
+      <div style="background: var(--gray-100); padding: 1.25rem; border-radius: var(--radius);">
+        <p style="font-size: 0.9rem; margin-bottom: 1rem;">
+          In this test, you can intentionally simulate an unauthorized direct modification of block data in the database. The Python validation engine recalculates block hashes and validates <code>previous_hash</code> linkages.
+        </p>
+        <button id="btn-validate" class="btn btn-outline" style="margin-right: 0.5rem;">
+          🔍 Validate Blockchain Integrity
+        </button>
+        <button id="btn-tamper" class="btn btn-danger" style="margin-right: 0.5rem;">
+          ⚠️ Simulate Unauthorized Block Tamper
+        </button>
+        <div id="tamper-output" style="margin-top: 1rem; display: none; padding: 1rem; border-radius: var(--radius); font-size: 0.85rem;"></div>
+      </div>
+    </div>
+
+    <!-- Live Blocks Explorer -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem;">
+        <div>
+          <h3 class="card-title">⛓️ Blockchain Blocks Ledger</h3>
+          <p class="card-subtitle" style="margin-bottom: 0;">Dedicated Citizen Blocks containing anchored cards & cryptographic Merkle roots</p>
+        </div>
+        <button onclick="fetchLedger()" class="btn btn-outline btn-sm">🔄 Refresh Ledger</button>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Block #</th>
+              <th>Citizen Account & Name</th>
+              <th>Anchored Cards & Documents</th>
+              <th>Merkle Root Hash</th>
+              <th>Previous Block Hash</th>
+              <th>Block Hash</th>
+              <th>Timestamp (UTC)</th>
+            </tr>
+          </thead>
+          <tbody id="blocks-tbody">
+            <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading ledger blocks...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Security Audit Logs -->
+    <div class="card">
+      <h3 class="card-title">📜 Security Audit Trails</h3>
+      <p class="card-subtitle">Immutable audit trail of certificate issuance, failed authentications, and verification queries</p>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>User</th>
+              <th>IP Address</th>
+              <th>Details</th>
+              <th>Outcome</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="logs-tbody">
+            <tr><td colspan="6" style="text-align: center;">Loading audit logs (requires Admin login for details)...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    async function fetchLedger() {
+      const tbody = document.getElementById('blocks-tbody');
+      try {
+        const res = await apiRequest('/blockchain/status');
+
+        if (!res.blocks || res.blocks.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--gray-600);">No blocks found in ledger.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = res.blocks.map(b => {
+          const certs = b.certificates_list || [];
+          const isGenesis = (b.block_number === 0 || b.citizen_identifier === 'SYSTEM-GENESIS');
+
+          let certsHtml = '';
+          if (isGenesis) {
+            certsHtml = '<span class="badge badge-info" style="font-size: 0.78rem;">National Genesis Seed Block</span>';
+          } else if (certs.length === 0) {
+            certsHtml = '<span style="color: var(--gray-400); font-size: 0.82rem;">No documents</span>';
+          } else {
+            certsHtml = `
+              <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <span class="badge badge-success" style="align-self: flex-start; font-size: 0.75rem;">
+                  🗂️ ${certs.length} Document${certs.length > 1 ? 's' : ''} Stored
+                </span>
+                ${certs.map(c => `
+                  <div style="background: var(--gray-100); padding: 0.35rem 0.55rem; border-radius: 6px; font-size: 0.8rem; border-left: 3px solid var(--primary);">
+                    <strong>${c.certificate_type || 'Identity Card'}:</strong>
+                    <code>${c.certificate_id || 'ID'}</code><br>
+                    <span class="hash-pill" style="font-size: 0.72rem; padding: 1px 4px; display: inline-block; margin-top: 2px;" title="Document SHA-256: ${c.certificate_hash}">
+                      SHA: ${(c.certificate_hash || '').substring(0, 16)}...
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          }
+
+          const prevHashStr = b.previous_hash ? (b.previous_hash.substring(0, 12) + '...') : '00000000...';
+          const blockHashStr = b.block_hash ? (b.block_hash.substring(0, 12) + '...') : 'N/A';
+          const merkleStr = b.merkle_root_hash ? (b.merkle_root_hash.substring(0, 12) + '...') : 'N/A';
+
+          return `
+            <tr>
+              <td>
+                <span class="badge ${isGenesis ? 'badge-info' : 'badge-primary'}" style="font-size: 0.9rem;">
+                  #${b.block_number}
+                </span>
+              </td>
+              <td>
+                <strong>${b.citizen_name || 'N/A'}</strong><br>
+                <small style="color: var(--gray-600); font-family: monospace;">${b.citizen_identifier || 'N/A'}</small>
+              </td>
+              <td style="min-width: 260px;">${certsHtml}</td>
+              <td><span class="hash-pill" title="${b.merkle_root_hash || ''}">${merkleStr}</span></td>
+              <td><span class="hash-pill" title="${b.previous_hash || ''}">${prevHashStr}</span></td>
+              <td><span class="hash-pill" title="${b.block_hash || ''}" style="border-color: var(--primary); font-weight: 600;">${blockHashStr}</span></td>
+              <td style="font-size: 0.78rem; color: var(--gray-600); white-space: nowrap;">${b.timestamp || 'N/A'}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Error fetching ledger:', err);
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger); padding: 1.5rem;">Failed to load ledger: ${err.message}. Please verify administrative session.</td></tr>`;
+      }
+    }
+
+    async function fetchAuditLogs() {
+      try {
+        const res = await apiRequest('/admin/audit-logs');
+        const tbody = document.getElementById('logs-tbody');
+
+        if (!res.logs || res.logs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No logs found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = res.logs.map(l => `
+          <tr>
+            <td><strong>${l.event_type}</strong></td>
+            <td>${l.user_identifier}</td>
+            <td><span style="font-family: monospace;">${l.ip_address}</span></td>
+            <td style="font-size: 0.8rem;"><pre style="margin: 0; white-space: pre-wrap;">${l.details}</pre></td>
+            <td>
+              <span class="badge ${l.outcome === 'SUCCESS' ? 'badge-success' : 'badge-danger'}">${l.outcome}</span>
+            </td>
+            <td style="font-size: 0.8rem; color: var(--gray-600);">${l.timestamp}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        document.getElementById('logs-tbody').innerHTML = `
+          <tr><td colspan="6" style="text-align: center; color: var(--gray-600);">Log access restricted to Government Administrator. Please sign in as admin.</td></tr>
+        `;
+      }
+    }
+
+    document.getElementById('btn-validate').addEventListener('click', async () => {
+      const out = document.getElementById('tamper-output');
+      out.style.display = 'block';
+      out.textContent = 'Verifying cryptographic chain...';
+      try {
+        const res = await apiRequest('/blockchain/status');
+        if (res.validation.is_valid) {
+          out.style.background = 'var(--success-bg)';
+          out.style.border = '1px solid var(--success)';
+          out.style.color = 'var(--success)';
+          out.innerHTML = `<strong>✅ Integrity Intact:</strong> ${res.validation.message} (Total blocks: ${res.validation.total_blocks})`;
+        } else {
+          out.style.background = 'var(--danger-bg)';
+          out.style.border = '1px solid var(--danger)';
+          out.style.color = 'var(--danger)';
+          out.innerHTML = `<strong>❌ Tamper Detected:</strong> ${res.validation.error}`;
+        }
+      } catch (err) {
+        out.textContent = err.message;
+      }
+    });
+
+    document.getElementById('btn-tamper').addEventListener('click', async () => {
+      const out = document.getElementById('tamper-output');
+      out.style.display = 'block';
+      if (!confirm('This will modify block data in the database to prove tamper detection. Proceed?')) return;
+
+      try {
+        const res = await apiRequest('/security/tamper-test', {
+          method: 'POST',
+          body: { block_number: 0 }
+        });
+
+        out.style.background = 'var(--danger-bg)';
+        out.style.border = '1px solid var(--danger)';
+        out.style.color = 'var(--danger)';
+        out.innerHTML = `
+          <strong>⚠️ Attack Simulated:</strong> Block #${res.tampered_block} was modified.<br>
+          <strong>Chain Response:</strong> ${res.validation_after_tamper.error}
+        `;
+        fetchLedger();
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message + ' (Make sure you are logged in as admin)';
+      }
+    });
+
+    fetchLedger();
+    fetchAuditLogs();
+  </script>
+</body>
+</html>

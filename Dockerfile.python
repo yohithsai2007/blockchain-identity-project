@@ -1,0 +1,24 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies (build-essential, libpq etc if needed)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install
+COPY python-service/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy service code
+COPY python-service/ ./
+
+# Expose microservice port
+EXPOSE 5001
+
+ENV HOST=0.0.0.0
+ENV PORT=5001
+
+CMD ["python", "app.py"]

@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+env/
+
+# Python cache & build
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.production
+
+# Runtime & Temporary Data
+storage/temp_uploads/*
+!storage/temp_uploads/.gitkeep
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database journals / locks
+*.db-journal
+*.db-wal
+*.db-shm
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/

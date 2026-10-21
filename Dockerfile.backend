@@ -1,0 +1,28 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies required by sqlite3 build if needed
+RUN apk add --no-cache python3 make g++
+
+# Copy package manifests first for caching
+COPY backend/package*.json ./backend/
+
+WORKDIR /app/backend
+RUN npm ci --omit=dev
+
+WORKDIR /app
+
+# Copy application backend and frontend assets
+COPY backend/ ./backend/
+COPY frontend/ ./frontend/
+
+WORKDIR /app/backend
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV PYTHON_SERVICE_URL=http://python-service:5001
+
+CMD ["node", "server.js"]

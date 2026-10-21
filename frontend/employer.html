@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Independent Verification Portal - Indian Digital Credentials</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="top-tricolour-ribbon"></div>
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <span class="brand-badge" style="background: linear-gradient(135deg, var(--india-green), var(--primary));">VERIFY</span>
+      <span>National Credential Verifier</span>
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/employer.html" class="nav-link active">Employer / Verifier Tool</a>
+      <a href="/security.html" class="nav-link">Blockchain Audit</a>
+      <div id="nav-user"></div>
+    </div>
+  </nav>
+
+  <div class="container" style="max-width: 950px;">
+    <!-- Main Banner -->
+    <div class="card" style="border-left: 5px solid var(--india-green); background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);">
+      <h2 class="card-title">🔍 Independent Employer / Third-Party Verification Portal</h2>
+      <p class="card-subtitle" style="margin-bottom: 0;">
+        Verify Indian citizen credentials (Aadhaar, PAN, Voter ID, Driving Licence) independently. Choose either the <strong>Public SHA-256 Hash</strong> provided by the applicant, or upload their <strong>Official Signed PDF</strong>.
+      </p>
+
+      <!-- Navigation Tabs -->
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchVerifyTab('hash')">🔑 Verify by Public SHA-256 Hash</button>
+        <button class="tab-btn" onclick="switchVerifyTab('file')">📄 Verify by Uploading Document PDF</button>
+      </div>
+    </div>
+
+    <!-- MODE 1: VERIFY BY PUBLIC HASH -->
+    <div id="tab-verify-hash" class="verify-tab-content">
+      <div class="card">
+        <h3 class="card-title">🔑 Enter Applicant's Public SHA-256 Hash</h3>
+        <p class="card-subtitle">Paste the 64-character hexadecimal hash provided by the citizen to audit the immutable blockchain block.</p>
+
+        <form id="verify-hash-form">
+          <div class="form-group">
+            <label class="form-label" for="public-hash-input">Citizen's Public SHA-256 Hash *</label>
+            <input type="text" id="public-hash-input" class="form-control" placeholder="e.g. a4c9d81bb2a32aa4631d917c165f71151506376b24805416f11092b914a6e46f" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="hash-cert-id-input">Document ID (Optional reference, e.g. GOV-2026...)</label>
+            <input type="text" id="hash-cert-id-input" class="form-control" placeholder="Optional identifier">
+          </div>
+
+          <button type="submit" id="btn-verify-hash" class="btn btn-green" style="width: 100%; padding: 0.85rem; font-size: 1rem;">
+            Run Independent Blockchain Audit &rarr;
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODE 2: VERIFY BY PDF FILE -->
+    <div id="tab-verify-file" class="verify-tab-content" style="display: none;">
+      <div class="card">
+        <h3 class="card-title">📄 Full Document Cryptographic Verification</h3>
+        <p class="card-subtitle">Upload the applicant's official PDF to recalculate the SHA-256 binary digest and verify the government's RSA-2048 digital signature.</p>
+
+        <form id="verify-file-form">
+          <div class="form-group">
+            <label class="form-label" for="cert-file">Candidate Document PDF (.pdf) *</label>
+            <input type="file" id="cert-file" class="form-control" accept="application/pdf" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="file-cert-id-input">Document ID (Optional - automatically extracted if in filename)</label>
+            <input type="text" id="file-cert-id-input" class="form-control" placeholder="e.g. GOV-20261011-V0PD4">
+          </div>
+
+          <button type="submit" id="btn-verify-file" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem;">
+            Audit File & Signatures &rarr;
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Results Display Container -->
+    <div id="result-container" style="display: none;"></div>
+
+    <!-- Explanatory Trust Card -->
+    <div class="card">
+      <h4 style="color: var(--gray-800); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span>🔐</span> How Indian Credentials are Cryptographically Secured:
+      </h4>
+      <div class="grid-3" style="font-size: 0.88rem; color: var(--gray-600); margin-top: 1rem; line-height: 1.6;">
+        <div style="background: var(--gray-100); padding: 1rem; border-radius: 8px;">
+          <strong style="color: var(--primary);">1. Public SHA-256 Hash</strong>
+          <p style="margin-top: 0.35rem;">Every card has a unique, irreversible 256-bit cryptographic fingerprint anchored directly to the ledger.</p>
+        </div>
+        <div style="background: var(--gray-100); padding: 1rem; border-radius: 8px;">
+          <strong style="color: var(--saffron);">2. RSA Digital Signature</strong>
+          <p style="margin-top: 0.35rem;">Signed using the Government Authority's private key (<code>GOV-NATIONAL-KEY-2026</code>) and validated using the public key.</p>
+        </div>
+        <div style="background: var(--gray-100); padding: 1rem; border-radius: 8px;">
+          <strong style="color: var(--india-green);">3. Zero-Tamper Proof</strong>
+          <p style="margin-top: 0.35rem;">Altering a single digit in the card number or name causes instant hash mismatch and cryptographic rejection.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>National Blockchain Identity Verification Portal &copy; 2026 | Employer & Institution Verifier Terminal</p>
+  </footer>
+
+  <script src="/js/app.js"></script>
+  <script>
+    function switchVerifyTab(mode) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.verify-tab-content').forEach(c => c.style.display = 'none');
+      document.getElementById('result-container').style.display = 'none';
+
+      if (mode === 'hash') {
+        event.target.classList.add('active');
+        document.getElementById('tab-verify-hash').style.display = 'block';
+      } else {
+        event.target.classList.add('active');
+        document.getElementById('tab-verify-file').style.display = 'block';
+      }
+    }
+
+    // Hash form submission
+    document.getElementById('verify-hash-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hash = document.getElementById('public-hash-input').value.trim();
+      const certId = document.getElementById('hash-cert-id-input').value.trim();
+      const btn = document.getElementById('btn-verify-hash');
+
+      btn.disabled = true;
+      btn.textContent = 'Querying Blockchain Ledger...';
+
+      try {
+        const apiBase = window.API_BASE || '/api';
+        const response = await fetch(`${apiBase}/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ certificate_hash: hash, certificate_id: certId })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Verification query failed');
+        renderResult(data);
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Run Independent Blockchain Audit →';
+      }
+    });
+
+    // File form submission
+    document.getElementById('verify-file-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('cert-file');
+      const certIdInput = document.getElementById('file-cert-id-input').value.trim();
+      const btn = document.getElementById('btn-verify-file');
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Please select a PDF document file.');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('certificate_file', file);
+      if (certIdInput) {
+        formData.append('certificate_id', certIdInput);
+      } else {
+        const baseName = file.name.replace(/\.pdf$/i, '');
+        if (baseName.startsWith('GOV-')) formData.append('certificate_id', baseName);
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Auditing Cryptographic Signatures...';
+
+      try {
+        const apiBase = window.API_BASE || '/api';
+        const response = await fetch(`${apiBase}/verify`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Verification failed');
+        renderResult(data);
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Audit File & Signatures →';
+      }
+    });
+
+    function showError(msg) {
+      const container = document.getElementById('result-container');
+      container.style.display = 'block';
+      container.className = 'verify-result-box verify-rejected';
+      container.innerHTML = `<h3>❌ Verification Error</h3><p style="margin-top:0.5rem;">${msg}</p>`;
+    }
+
+    function renderResult(data) {
+      const resultContainer = document.getElementById('result-container');
+      resultContainer.style.display = 'block';
+
+      const isVerified = (data.status === 'VERIFIED');
+      const isNotFound = (data.status === 'NOT_FOUND');
+
+      let boxClass = 'verify-rejected';
+      if (isVerified) boxClass = 'verify-verified';
+      else if (isNotFound) boxClass = 'verify-warning';
+
+      resultContainer.className = `verify-result-box ${boxClass}`;
+
+      const checks = data.checks;
+      const block = data.block || {};
+      const cert = data.certificate || block.matching_certificate || {};
+      const isFileAudit = (data.verification_mode === 'FILE_AUDIT');
+
+      let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h2 style="font-size: 1.35rem;">${data.final_result}</h2>
+          <span class="badge ${isVerified ? 'badge-success' : 'badge-danger'}" style="font-size: 0.9rem;">
+            ${data.status}
+          </span>
+        </div>
+
+        <div style="background: white; padding: 1.25rem; border-radius: var(--radius); color: var(--dark); margin-top: 1rem; border: 1px solid var(--gray-200);">
+          <h4 style="margin-bottom: 0.75rem; color: var(--gray-800);">Cryptographic Audit Checklist:</h4>
+          <ul style="list-style: none; font-size: 0.92rem; line-height: 2;">
+            <li>
+              <strong>BLOCKCHAIN RECORD:</strong>
+              ${checks.blockchain_record_found ? '<span class="badge badge-success">FOUND IN CITIZEN BLOCK #' + (block.block_number ?? '') + '</span>' : '<span class="badge badge-danger">NOT FOUND ON CHAIN</span>'}
+            </li>
+            <li>
+              <strong>CERTIFICATE HASH:</strong>
+              ${checks.hash_match ? '<span class="badge badge-success">MATCH (SHA-256)</span>' : '<span class="badge badge-danger">MISMATCH (TAMPERED)</span>'}
+            </li>
+            ${isFileAudit ? `
+              <li>
+                <strong>GOVERNMENT RSA SIGNATURE:</strong>
+                ${checks.signature_provided ? (checks.signature_valid ? '<span class="badge badge-success">VALID (RSA-PSS 2048)</span>' : '<span class="badge badge-danger">INVALID SIGNATURE</span>') : '<span class="badge badge-warning">NOT PROVIDED</span>'}
+              </li>
+            ` : `
+              <li>
+                <strong>VERIFICATION METHOD:</strong>
+                <span class="badge badge-info">Public SHA-256 Hash Ledger Lookup</span>
+              </li>
+            `}
+          </ul>
+
+          <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--gray-200); font-size: 0.85rem;">
+            <p><strong>Queried SHA-256 Hash:</strong></p>
+            <p class="hash-pill" style="margin-bottom: 0.5rem;">${checks.certificate_hash || 'N/A'}</p>
+
+            ${checks.blockchain_hash ? `
+              <p><strong>Anchored Blockchain SHA-256:</strong></p>
+              <p class="hash-pill" style="margin-bottom: 0.5rem;">${checks.blockchain_hash}</p>
+            ` : ''}
+
+            ${block.block_number !== undefined ? `
+              <div style="margin-top: 0.75rem; background: var(--gray-100); padding: 0.85rem; border-radius: 6px; line-height: 1.7;">
+                <p><strong>Citizen Account:</strong> <code>${block.citizen_identifier || cert.citizen_identifier || 'N/A'}</code></p>
+                <p><strong>Document ID:</strong> <code>${cert.certificate_id || block.certificate_id || 'N/A'}</code></p>
+                ${cert.certificate_type ? `<p><strong>Document Type:</strong> <code>${cert.certificate_type}</code></p>` : ''}
+                <p><strong>Anchored Block:</strong> #${block.block_number}</p>
+                <p><strong>Issuer Authority Key:</strong> <code>${block.issuer_key_id}</code></p>
+                <p><strong>Timestamp (UTC):</strong> ${block.timestamp}</p>
+                <p><strong>Block Hash:</strong> <span class="hash-pill">${block.block_hash}</span></p>
+                <p><strong>Previous Hash:</strong> <span class="hash-pill">${block.previous_hash}</span></p>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+
+      resultContainer.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

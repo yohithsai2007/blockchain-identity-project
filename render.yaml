@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: indian-identity-blockchain
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PYTHON_SERVICE_URL
+        value: http://127.0.0.1:5001
+      - key: JWT_SECRET
+        generateValue: true

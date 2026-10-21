@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Government Authority Portal - Indian Identity Services</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .stats-card {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .stats-card .count {
+      font-size: 1.75rem;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-tricolour-ribbon"></div>
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <span class="brand-badge">GOV-ADMIN</span>
+      <span>National Digital Identity Authority</span>
+    </a>
+    <div class="nav-links">
+      <a href="/government.html" class="nav-link active">Admin Console</a>
+      <a href="javascript:void(0)" onclick="switchGovTab('verify')" class="nav-link">Gov Verification</a>
+      <a href="/security.html" class="nav-link">Blockchain & Security</a>
+      <div id="nav-user"></div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Top Authority Banner -->
+    <div class="card" style="border-left: 5px solid var(--primary); background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 class="card-title">🏛️ Government Citizen Request Verification & Issuance Console</h2>
+          <p class="card-subtitle" style="margin-bottom: 0;">
+            Review incoming Indian citizen identity requests (Aadhaar, PAN, Voter ID, Driving Licence), verify citizen phone/email/DOB details, accept and digitally sign to anchor to blockchain, or decline with remarks.
+          </p>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="grid-4" style="margin-top: 1.25rem;">
+        <div class="stats-card">
+          <div>
+            <div style="font-size: 0.82rem; color: var(--gray-600); font-weight: 600;">PENDING REQUESTS</div>
+            <div class="count" id="stat-pending" style="color: var(--warning);">0</div>
+          </div>
+          <div style="font-size: 2rem;">⏳</div>
+        </div>
+        <div class="stats-card">
+          <div>
+            <div style="font-size: 0.82rem; color: var(--gray-600); font-weight: 600;">ACCEPTED & ISSUED</div>
+            <div class="count" id="stat-approved" style="color: var(--india-green);">0</div>
+          </div>
+          <div style="font-size: 2rem;">✅</div>
+        </div>
+        <div class="stats-card">
+          <div>
+            <div style="font-size: 0.82rem; color: var(--gray-600); font-weight: 600;">DECLINED REQUESTS</div>
+            <div class="count" id="stat-rejected" style="color: var(--danger);">0</div>
+          </div>
+          <div style="font-size: 2rem;">❌</div>
+        </div>
+        <div class="stats-card">
+          <div>
+            <div style="font-size: 0.82rem; color: var(--gray-600); font-weight: 600;">TOTAL BLOCKCHAIN BLOCKS</div>
+            <div class="count" id="stat-blocks" style="color: var(--primary);">0</div>
+          </div>
+          <div style="font-size: 2rem;">⛓️</div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="tabs-header">
+        <button class="tab-btn active" id="tab-btn-requests" onclick="switchGovTab('requests')">📥 Citizen Requests & Decision History</button>
+        <button class="tab-btn" id="tab-btn-verify" onclick="switchGovTab('verify')">🔍 Official Document Verification</button>
+        <button class="tab-btn" id="tab-btn-direct" onclick="switchGovTab('direct')">⚡ Direct Issuance (Manual / Upload)</button>
+        <button class="tab-btn" id="tab-btn-registry" onclick="switchGovTab('registry')">📋 Anchored Identity Registry</button>
+        <button class="tab-btn" id="tab-btn-ledger" onclick="switchGovTab('ledger')">⛓️ Blockchain Blocks Ledger</button>
+      </div>
+    </div>
+
+    <!-- TAB 1: CITIZEN REQUESTS QUEUE & HISTORY -->
+    <div id="tab-requests" class="gov-tab-content">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <h3 class="card-title">📥 Citizen Identity Applications Queue & History</h3>
+            <p class="card-subtitle" style="margin-bottom: 0;">Review applicant information, contact details, and decide whether to accept or decline.</p>
+          </div>
+          <!-- Filter pills: All, Pending, Approved, Rejected -->
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="filter-pill active" onclick="filterRequests('ALL', this)">All History</button>
+            <button class="filter-pill" onclick="filterRequests('PENDING', this)">⏳ Pending Only</button>
+            <button class="filter-pill" onclick="filterRequests('APPROVED', this)">✅ Accepted Only</button>
+            <button class="filter-pill" onclick="filterRequests('REJECTED', this)">❌ Declined Only</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>App ID</th>
+                <th>Citizen Name & Contact</th>
+                <th>Identity Card Type</th>
+                <th>State & DOB</th>
+                <th>Purpose / Remarks</th>
+                <th>Submission Time</th>
+                <th>Status</th>
+                <th>Government Action</th>
+              </tr>
+            </thead>
+            <tbody id="gov-requests-tbody">
+              <tr><td colspan="8" style="text-align: center; padding: 2rem;">Loading citizen requests...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: GOVERNMENT OFFICIAL DOCUMENT VERIFICATION -->
+    <div id="tab-verify" class="gov-tab-content" style="display: none;">
+      <div class="card" style="border-left: 5px solid var(--india-green); background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);">
+        <h3 class="card-title">🔍 Official Government Document & Credential Verification Console</h3>
+        <p class="card-subtitle" style="margin-bottom: 0;">
+          Authenticate any issued Indian digital credential against the National Blockchain Registry. Government authorities can audit using either the applicant's <strong>Public SHA-256 Hash</strong> or by uploading the <strong>Official Signed PDF</strong>.
+        </p>
+
+        <!-- Subtabs for verification mode -->
+        <div style="display: flex; gap: 0.5rem; margin-top: 1.25rem;">
+          <button class="filter-pill active" id="btn-mode-hash" onclick="switchGovVerifyMode('hash')">🔑 Audit by Public SHA-256 Hash</button>
+          <button class="filter-pill" id="btn-mode-file" onclick="switchGovVerifyMode('file')">📄 Audit by Document PDF & RSA Signature</button>
+        </div>
+      </div>
+
+      <!-- Mode A: Hash Verification -->
+      <div id="gov-verify-mode-hash" class="card" style="margin-top: 1rem;">
+        <h4 style="color: var(--gray-800); margin-bottom: 0.5rem;">🔑 Enter Citizen's Public SHA-256 Hash</h4>
+        <p style="font-size: 0.88rem; color: var(--gray-600); margin-bottom: 1.25rem;">
+          Query the immutable blockchain ledger using the 64-character hexadecimal SHA-256 cryptographic digest.
+        </p>
+
+        <form id="gov-verify-hash-form">
+          <div class="form-group">
+            <label class="form-label" for="gov-hash-input">Citizen's Public SHA-256 Hash *</label>
+            <input type="text" id="gov-hash-input" class="form-control" placeholder="e.g. a4c9d81bb2a32aa4631d917c165f71151506376b24805416f11092b914a6e46f" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="gov-hash-cert-id">Document ID (Optional, e.g. GOV-2026...)</label>
+            <input type="text" id="gov-hash-cert-id" class="form-control" placeholder="Optional document identifier">
+          </div>
+
+          <button type="submit" id="btn-gov-verify-hash" class="btn btn-green" style="padding: 0.85rem 1.5rem; font-size: 0.95rem;">
+            🔍 Audit Blockchain Ledger as Authority &rarr;
+          </button>
+        </form>
+      </div>
+
+      <!-- Mode B: File Verification -->
+      <div id="gov-verify-mode-file" class="card" style="margin-top: 1rem; display: none;">
+        <h4 style="color: var(--gray-800); margin-bottom: 0.5rem;">📄 Full Document Cryptographic Verification</h4>
+        <p style="font-size: 0.88rem; color: var(--gray-600); margin-bottom: 1.25rem;">
+          Upload the citizen's PDF document to recalculate binary SHA-256 hash and cryptographically verify the government RSA-PSS (2048-bit) signature.
+        </p>
+
+        <form id="gov-verify-file-form">
+          <div class="form-group">
+            <label class="form-label" for="gov-file-input">Official Document PDF (.pdf) *</label>
+            <input type="file" id="gov-file-input" class="form-control" accept="application/pdf" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="gov-file-cert-id">Document ID (Optional - auto-detected from filename)</label>
+            <input type="text" id="gov-file-cert-id" class="form-control" placeholder="e.g. GOV-20261011-V0PD4">
+          </div>
+
+          <button type="submit" id="btn-gov-verify-file" class="btn btn-primary" style="padding: 0.85rem 1.5rem; font-size: 0.95rem;">
+            🔐 Recalculate Hash & Audit RSA Signature &rarr;
+          </button>
+        </form>
+      </div>
+
+      <!-- Government Verification Results Container -->
+      <div id="gov-verify-result" style="display: none; margin-top: 1.5rem;"></div>
+    </div>
+
+    <!-- TAB 2: DIRECT MANUAL / FILE UPLOAD ISSUANCE -->
+    <div id="tab-direct" class="gov-tab-content" style="display: none;">
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="card-title">📜 Direct Government Issuance</h3>
+          <p class="card-subtitle">Issue an official card directly with or without an existing PDF file</p>
+
+          <div id="issue-status" style="display: none; padding: 0.85rem; border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.88rem;"></div>
+
+          <form id="issue-form">
+            <div class="form-group">
+              <label class="form-label" for="citizen-select">Select Registered Citizen *</label>
+              <select id="citizen-select" class="form-control" required>
+                <option value="">Loading registered citizens...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cert-type">Card Category *</label>
+              <select id="cert-type" class="form-control" required>
+                <option value="Aadhaar Card">Aadhaar Card (UIDAI)</option>
+                <option value="PAN Card">PAN Card (Income Tax Department)</option>
+                <option value="Voter ID (EPIC)">Voter ID / EPIC Card (ECI)</option>
+                <option value="Driving License">Driving Licence (MoRTH)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cert-remarks">Authority Remarks / Verification Reference</label>
+              <input type="text" id="cert-remarks" class="form-control" placeholder="e.g. Verified via National Population Register">
+            </div>
+
+            <div class="form-group" style="background: #f8fafc; padding: 1rem; border-radius: var(--radius); border: 1.5px dashed var(--gray-300);">
+              <label class="form-label" for="cert-file-upload">
+                📄 Custom Certificate / Scanned PDF (Optional)
+              </label>
+              <input type="file" id="cert-file-upload" class="form-control" accept="application/pdf">
+              <small style="color: var(--gray-600); display: block; margin-top: 0.4rem;">
+                Optional: Upload a pre-existing department PDF. If omitted, the system generates the official national card PDF automatically!
+              </small>
+            </div>
+
+            <button type="submit" id="btn-issue" class="btn btn-primary" style="width: 100%; padding: 0.85rem;">
+              Sign with Private Key & Anchor to Blockchain
+            </button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">⛓️ Blockchain Node Health</h3>
+          <p class="card-subtitle">Real-time status of local Python blockchain</p>
+          <div style="background: var(--gray-100); padding: 1.25rem; border-radius: var(--radius); font-size: 0.92rem; line-height: 1.8;">
+            <p><strong>Ledger Status:</strong> <span class="badge badge-success" id="chain-valid">INTEGRITY VERIFIED</span></p>
+            <p><strong>Total Anchored Blocks:</strong> <span id="chain-length" style="font-weight: 700;">-</span></p>
+            <p><strong>Government Key:</strong> <code>GOV-NATIONAL-KEY-2026</code></p>
+            <p><strong>Digital Signature:</strong> RSA-PSS (2048-bit)</p>
+            <p><strong>Cryptographic Digest:</strong> SHA-256 (Deterministic)</p>
+            <div style="margin-top: 1rem;">
+              <a href="/security.html" class="btn btn-outline btn-sm">Inspect Full Ledger & Security Logs &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: ISSUED REGISTRY -->
+    <div id="tab-registry" class="gov-tab-content" style="display: none;">
+      <div class="card">
+        <h3 class="card-title">📋 Issued Identity Documents Registry</h3>
+        <p class="card-subtitle">All cards authenticated and anchored on the blockchain</p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Document ID</th>
+                <th>Citizen Name</th>
+                <th>Card Category</th>
+                <th>Issue Date</th>
+                <th>Public SHA-256 Hash</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="issued-table-body">
+              <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading registry...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: BLOCKCHAIN BLOCKS LEDGER -->
+    <div id="tab-ledger" class="gov-tab-content" style="display: none;">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <h3 class="card-title">⛓️ Blockchain Blocks Ledger (Citizen Blocks)</h3>
+            <p class="card-subtitle" style="margin-bottom: 0;">
+              Immutable ledger of citizen-anchored blocks. Each citizen has one dedicated block containing all their verified identity cards and files.
+            </p>
+          </div>
+          <button onclick="loadGovLedger()" class="btn btn-outline btn-sm">🔄 Refresh Ledger</button>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Block #</th>
+                <th>Citizen Account & Name</th>
+                <th>Anchored Identity Cards</th>
+                <th>Merkle Root Hash</th>
+                <th>Previous Block Hash</th>
+                <th>Block Hash</th>
+                <th>Timestamp (UTC)</th>
+              </tr>
+            </thead>
+            <tbody id="gov-ledger-tbody">
+              <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading ledger blocks...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rejection Modal -->
+  <div id="reject-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <h3 style="margin-bottom: 0.4rem; color: var(--danger); font-size: 1.2rem;">❌ Decline Citizen Request</h3>
+      <p style="font-size: 0.88rem; color: var(--gray-600); margin-bottom: 1rem;">
+        Provide a reason for declining this citizen's application. This will be visible in the citizen's application history tracker.
+      </p>
+      <input type="hidden" id="reject-req-id">
+      <textarea id="reject-reason" class="form-control" rows="3" placeholder="e.g. Phone number does not match registered Aadhaar mobile record, incomplete verification..." required></textarea>
+      <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button onclick="closeRejectModal()" class="btn btn-outline btn-sm">Cancel</button>
+        <button onclick="confirmReject()" class="btn btn-danger btn-sm">Decline Application</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>National Blockchain Identity Verification Portal &copy; 2026 | Government Authority Terminal</p>
+  </footer>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const user = getUser();
+    if (!user || user.role !== 'admin') {
+      alert('Access restricted. Please log in as a Government Administrator.');
+      window.location.href = '/login.html';
+    }
+
+    let allRequestsData = [];
+    let currentFilter = 'ALL';
+
+    function switchGovTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.gov-tab-content').forEach(c => c.style.display = 'none');
+
+      const btn = document.getElementById(`tab-btn-${tabName}`);
+      if (btn) btn.classList.add('active');
+
+      if (tabName === 'requests') {
+        document.getElementById('tab-requests').style.display = 'block';
+        loadGovRequests();
+      } else if (tabName === 'verify') {
+        document.getElementById('tab-verify').style.display = 'block';
+      } else if (tabName === 'direct') {
+        document.getElementById('tab-direct').style.display = 'block';
+        loadCitizens();
+        loadChainStatus();
+      } else if (tabName === 'registry') {
+        document.getElementById('tab-registry').style.display = 'block';
+        loadIssuedCertificates();
+      } else if (tabName === 'ledger') {
+        document.getElementById('tab-ledger').style.display = 'block';
+        loadGovLedger();
+      }
+    }
+
+    async function loadGovLedger() {
+      const tbody = document.getElementById('gov-ledger-tbody');
+      try {
+        const res = await apiRequest('/blockchain/status');
+        if (!res.blocks || res.blocks.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--gray-600);">No blocks found in ledger.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = res.blocks.map(b => {
+          const certs = b.certificates_list || [];
+          const isGenesis = (b.block_number === 0 || b.citizen_identifier === 'SYSTEM-GENESIS');
+
+          let certsHtml = '';
+          if (isGenesis) {
+            certsHtml = '<span class="badge badge-info" style="font-size: 0.78rem;">National Genesis Seed Block</span>';
+          } else if (certs.length === 0) {
+            certsHtml = '<span style="color: var(--gray-400); font-size: 0.82rem;">No documents</span>';
+          } else {
+            certsHtml = `
+              <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <span class="badge badge-success" style="align-self: flex-start; font-size: 0.75rem;">
+                  🗂️ ${certs.length} Document${certs.length > 1 ? 's' : ''} Stored
+                </span>
+                ${certs.map(c => `
+                  <div style="background: var(--gray-100); padding: 0.35rem 0.55rem; border-radius: 6px; font-size: 0.8rem; border-left: 3px solid var(--primary);">
+                    <strong>${c.certificate_type || 'Identity Card'}:</strong>
+                    <code>${c.certificate_id || 'ID'}</code><br>
+                    <span class="hash-pill" style="font-size: 0.72rem; padding: 1px 4px; display: inline-block; margin-top: 2px;" title="Document SHA-256: ${c.certificate_hash}">
+                      SHA: ${(c.certificate_hash || '').substring(0, 16)}...
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          }
+
+          const prevHashStr = b.previous_hash ? (b.previous_hash.substring(0, 12) + '...') : '00000000...';
+          const blockHashStr = b.block_hash ? (b.block_hash.substring(0, 12) + '...') : 'N/A';
+          const merkleStr = b.merkle_root_hash ? (b.merkle_root_hash.substring(0, 12) + '...') : 'N/A';
+
+          return `
+            <tr>
+              <td>
+                <span class="badge ${isGenesis ? 'badge-info' : 'badge-primary'}" style="font-size: 0.9rem;">
+                  #${b.block_number}
+                </span>
+              </td>
+              <td>
+                <strong>${b.citizen_name || 'N/A'}</strong><br>
+                <small style="color: var(--gray-600); font-family: monospace;">${b.citizen_identifier || 'N/A'}</small>
+              </td>
+              <td style="min-width: 260px;">${certsHtml}</td>
+              <td><span class="hash-pill" title="${b.merkle_root_hash || ''}">${merkleStr}</span></td>
+              <td><span class="hash-pill" title="${b.previous_hash || ''}">${prevHashStr}</span></td>
+              <td><span class="hash-pill" title="${b.block_hash || ''}" style="border-color: var(--primary); font-weight: 600;">${blockHashStr}</span></td>
+              <td style="font-size: 0.78rem; color: var(--gray-600); white-space: nowrap;">${b.timestamp || 'N/A'}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Error fetching ledger:', err);
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger); padding: 1.5rem;">Failed to load ledger: ${err.message}</td></tr>`;
+      }
+    }
+
+    function switchGovVerifyMode(mode) {
+      document.getElementById('btn-mode-hash').classList.remove('active');
+      document.getElementById('btn-mode-file').classList.remove('active');
+      document.getElementById('gov-verify-mode-hash').style.display = 'none';
+      document.getElementById('gov-verify-mode-file').style.display = 'none';
+      document.getElementById('gov-verify-result').style.display = 'none';
+
+      if (mode === 'hash') {
+        document.getElementById('btn-mode-hash').classList.add('active');
+        document.getElementById('gov-verify-mode-hash').style.display = 'block';
+      } else {
+        document.getElementById('btn-mode-file').classList.add('active');
+        document.getElementById('gov-verify-mode-file').style.display = 'block';
+      }
+    }
+
+    function filterRequests(status, btnElem) {
+      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      btnElem.classList.add('active');
+      currentFilter = status;
+      renderRequestsTable();
+    }
+
+    async function loadGovRequests() {
+      try {
+        const data = await apiRequest('/admin/requests');
+        allRequestsData = data.requests || [];
+
+        // Calculate counts
+        const pendingCount = allRequestsData.filter(r => r.status === 'PENDING').length;
+        const approvedCount = allRequestsData.filter(r => r.status === 'APPROVED').length;
+        const rejectedCount = allRequestsData.filter(r => r.status === 'REJECTED').length;
+
+        document.getElementById('stat-pending').textContent = pendingCount;
+        document.getElementById('stat-approved').textContent = approvedCount;
+        document.getElementById('stat-rejected').textContent = rejectedCount;
+
+        renderRequestsTable();
+        loadChainStatus();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderRequestsTable() {
+      const tbody = document.getElementById('gov-requests-tbody');
+      let filtered = allRequestsData;
+
+      if (currentFilter !== 'ALL') {
+        filtered = allRequestsData.filter(r => r.status === currentFilter);
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--gray-600); padding: 2rem;">No requests found matching '${currentFilter}'.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(r => {
+        let badgeClass = 'badge-warning';
+        let statusText = '⏳ PENDING';
+        if (r.status === 'APPROVED') {
+          badgeClass = 'badge-success';
+          statusText = '✅ ACCEPTED';
+        } else if (r.status === 'REJECTED') {
+          badgeClass = 'badge-danger';
+          statusText = '❌ DECLINED';
+        }
+
+        return `
+          <tr>
+            <td><strong>#REQ-${r.id}</strong></td>
+            <td>
+              <strong>${r.citizen_name}</strong><br>
+              <small style="color: var(--gray-600);">📞 ${r.phone_number || 'N/A'}</small><br>
+              <small style="color: var(--gray-600);">✉️ ${r.email || r.citizen_account_email || 'N/A'}</small>
+            </td>
+            <td><strong style="color: var(--primary);">${r.certificate_type}</strong></td>
+            <td style="font-size: 0.85rem;">
+              <strong>${r.state_region || 'N/A'}</strong><br>
+              <small style="color: var(--gray-600);">DOB: ${r.date_of_birth || 'N/A'}</small>
+            </td>
+            <td style="font-size: 0.85rem;">
+              <strong>Purpose:</strong> ${r.purpose || 'N/A'}
+              ${r.rejection_reason ? `<br><small style="color: var(--danger);"><strong>Note:</strong> ${r.rejection_reason}</small>` : ''}
+            </td>
+            <td style="font-size: 0.8rem; color: var(--gray-600);">${r.created_at}</td>
+            <td><span class="badge ${badgeClass}">${statusText}</span></td>
+            <td>
+              ${r.status === 'PENDING' ? `
+                <div style="display: flex; gap: 0.4rem;">
+                  <button onclick="approveRequest(${r.id})" class="btn btn-green btn-sm" title="Accept & anchor onto blockchain">
+                    ✅ Accept
+                  </button>
+                  <button onclick="openRejectModal(${r.id})" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: #fca5a5;" title="Decline request">
+                    ❌ Decline
+                  </button>
+                </div>
+              ` : (r.status === 'APPROVED' ? `
+                <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                  <span style="color: var(--india-green); font-weight:700; font-size:0.85rem;">Issued: <code>${r.certificate_id}</code></span>
+                  <button onclick="previewCertificate('${r.certificate_id}', '${r.certificate_type}', '')" class="btn btn-primary btn-sm" style="padding: 0.2rem 0.55rem; font-size: 0.76rem;" title="Preview generated card">
+                    👁️ Preview
+                  </button>
+                </div>
+              ` : `<span style="color: var(--danger); font-size:0.85rem;">Declined</span>`)}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function approveRequest(id) {
+      if (!confirm(`Are you sure you want to ACCEPT Application #REQ-${id}? This will generate the official card PDF, sign it with the government RSA-2048 private key, and anchor the SHA-256 hash onto the blockchain.`)) return;
+
+      try {
+        const res = await apiRequest(`/admin/requests/${id}/approve`, {
+          method: 'POST',
+          body: {}
+        });
+        alert(`Success! Card ${res.certificate.certificate_id} generated & anchored to Block #${res.certificate.block.block_number}`);
+        loadGovRequests();
+        loadIssuedCertificates();
+      } catch (err) {
+        alert('Acceptance failed: ' + err.message);
+      }
+    }
+
+    function openRejectModal(id) {
+      document.getElementById('reject-req-id').value = id;
+      document.getElementById('reject-reason').value = '';
+      document.getElementById('reject-modal').style.display = 'flex';
+    }
+
+    function closeRejectModal() {
+      document.getElementById('reject-modal').style.display = 'none';
+    }
+
+    async function confirmReject() {
+      const id = document.getElementById('reject-req-id').value;
+      const reason = document.getElementById('reject-reason').value.trim();
+      if (!reason) {
+        alert('Please provide a reason for declining.');
+        return;
+      }
+
+      try {
+        await apiRequest(`/admin/requests/${id}/reject`, {
+          method: 'POST',
+          body: { reason }
+        });
+        closeRejectModal();
+        loadGovRequests();
+      } catch (err) {
+        alert('Failed to decline: ' + err.message);
+      }
+    }
+
+    async function loadCitizens() {
+      try {
+        const data = await apiRequest('/citizens');
+        const select = document.getElementById('citizen-select');
+        select.innerHTML = '<option value="">-- Choose Citizen --</option>';
+        data.citizens.forEach(c => {
+          select.innerHTML += `<option value="${c.id}">${c.full_name} (${c.username})</option>`;
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadChainStatus() {
+      try {
+        const data = await apiRequest('/blockchain/status');
+        document.getElementById('chain-length').textContent = data.total_blocks;
+        document.getElementById('stat-blocks').textContent = data.total_blocks;
+        const validBadge = document.getElementById('chain-valid');
+        if (data.validation.is_valid) {
+          validBadge.textContent = 'INTEGRITY VERIFIED';
+          validBadge.className = 'badge badge-success';
+        } else {
+          validBadge.textContent = 'INTEGRITY COMPROMISED';
+          validBadge.className = 'badge badge-danger';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadIssuedCertificates() {
+      try {
+        const data = await apiRequest('/certificates/issued');
+        const tbody = document.getElementById('issued-table-body');
+        if (data.certificates.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--gray-400); padding: 2rem;">No documents issued yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.certificates.map(c => `
+          <tr>
+            <td><code>${c.certificate_id}</code></td>
+            <td><strong>${c.citizen_name}</strong></td>
+            <td>${c.certificate_type}</td>
+            <td>${c.issue_date}</td>
+            <td><span class="hash-pill" title="${c.certificate_hash}">${c.certificate_hash.substring(0, 18)}...</span></td>
+            <td>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button onclick="previewCertificate('${c.certificate_id}', '${c.certificate_type}', '${c.certificate_hash}')" class="btn btn-primary btn-sm" title="Preview card in browser">
+                  👁️ Preview
+                </button>
+                <button onclick="downloadCert('${c.certificate_id}')" class="btn btn-outline btn-sm" title="Download PDF file">
+                  ⬇️ Download
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function downloadCert(certId) {
+      try {
+        const token = getToken();
+        const apiBase = window.API_BASE || '/api';
+        const response = await fetch(`${apiBase}/certificates/download/${certId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to download certificate');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${certId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    document.getElementById('issue-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const citizen_id = document.getElementById('citizen-select').value;
+      const certificate_type = document.getElementById('cert-type').value;
+      const remarks = document.getElementById('cert-remarks').value;
+      const fileInput = document.getElementById('cert-file-upload');
+      const statusDiv = document.getElementById('issue-status');
+      const btn = document.getElementById('btn-issue');
+
+      btn.disabled = true;
+      btn.textContent = 'Signing & Anchoring to Blockchain...';
+      statusDiv.style.display = 'none';
+
+      try {
+        const token = getToken();
+        let res;
+
+        if (fileInput.files && fileInput.files.length > 0) {
+          const formData = new FormData();
+          formData.append('citizen_id', citizen_id);
+          formData.append('certificate_type', certificate_type);
+          formData.append('remarks', remarks);
+          formData.append('certificate_file', fileInput.files[0]);
+
+          const apiBase = window.API_BASE || '/api';
+          const rawRes = await fetch(`${apiBase}/certificates/issue`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+          });
+          res = await rawRes.json();
+          if (!rawRes.ok) throw new Error(res.error || 'Issuance failed');
+        } else {
+          res = await apiRequest('/certificates/issue', {
+            method: 'POST',
+            body: { citizen_id, certificate_type, remarks }
+          });
+        }
+
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = 'var(--success-bg)';
+        statusDiv.style.border = '1px solid var(--success)';
+        statusDiv.style.color = 'var(--success)';
+        statusDiv.innerHTML = `
+          <strong>Success!</strong> Card <code>${res.certificate.certificate_id}</code> anchored to Block #${res.certificate.block.block_number}.<br>
+          <small><strong>SHA-256 Digest:</strong> <span class="hash-pill">${res.certificate.certificate_hash}</span></small>
+          <div style="margin-top: 0.6rem;">
+            <button onclick="previewCertificate('${res.certificate.certificate_id}', '${res.certificate.certificate_type}', '${res.certificate.certificate_hash}')" class="btn btn-primary btn-sm">
+              👁️ Preview Card in Browser
+            </button>
+          </div>
+        `;
+
+        document.getElementById('cert-remarks').value = '';
+        fileInput.value = '';
+        loadIssuedCertificates();
+        loadChainStatus();
+        loadGovRequests();
+      } catch (err) {
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = 'var(--danger-bg)';
+        statusDiv.style.border = '1px solid var(--danger)';
+        statusDiv.style.color = 'var(--danger)';
+        statusDiv.textContent = 'Error: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign with Private Key & Anchor to Blockchain';
+      }
+    });
+
+    // Gov Hash Verification
+    document.getElementById('gov-verify-hash-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hash = document.getElementById('gov-hash-input').value.trim();
+      const certId = document.getElementById('gov-hash-cert-id').value.trim();
+      const btn = document.getElementById('btn-gov-verify-hash');
+
+      btn.disabled = true;
+      btn.textContent = 'Querying Blockchain Ledger...';
+
+      try {
+        const token = getToken();
+        const apiBase = window.API_BASE || '/api';
+        const response = await fetch(`${apiBase}/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ certificate_hash: hash, certificate_id: certId })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Verification query failed');
+        renderGovVerifyResult(data);
+      } catch (err) {
+        showGovVerifyError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 Audit Blockchain Ledger as Authority →';
+      }
+    });
+
+    // Gov File Verification
+    document.getElementById('gov-verify-file-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('gov-file-input');
+      const certIdInput = document.getElementById('gov-file-cert-id').value.trim();
+      const btn = document.getElementById('btn-gov-verify-file');
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Please select a PDF document file.');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('certificate_file', file);
+      if (certIdInput) {
+        formData.append('certificate_id', certIdInput);
+      } else {
+        const baseName = file.name.replace(/\.pdf$/i, '');
+        if (baseName.startsWith('GOV-')) formData.append('certificate_id', baseName);
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Auditing Cryptographic Signatures...';
+
+      try {
+        const token = getToken();
+        const apiBase = window.API_BASE || '/api';
+        const response = await fetch(`${apiBase}/verify`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Verification failed');
+        renderGovVerifyResult(data);
+      } catch (err) {
+        showGovVerifyError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔐 Recalculate Hash & Audit RSA Signature →';
+      }
+    });
+
+    function showGovVerifyError(msg) {
+      const container = document.getElementById('gov-verify-result');
+      container.style.display = 'block';
+      container.className = 'verify-result-box verify-rejected';
+      container.innerHTML = `<h3>❌ Verification Error</h3><p style="margin-top:0.5rem;">${msg}</p>`;
+    }
+
+    function renderGovVerifyResult(data) {
+      const container = document.getElementById('gov-verify-result');
+      container.style.display = 'block';
+
+      const isVerified = (data.status === 'VERIFIED');
+      const isNotFound = (data.status === 'NOT_FOUND');
+
+      let boxClass = 'verify-rejected';
+      if (isVerified) boxClass = 'verify-verified';
+      else if (isNotFound) boxClass = 'verify-warning';
+
+      container.className = `verify-result-box ${boxClass}`;
+
+      const checks = data.checks || {};
+      const block = data.block || {};
+      const cert = data.certificate || block.matching_certificate || {};
+      const isFileAudit = (data.verification_mode === 'FILE_AUDIT');
+
+      let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h2 style="font-size: 1.35rem;">🏛️ ${data.final_result}</h2>
+          <span class="badge ${isVerified ? 'badge-success' : 'badge-danger'}" style="font-size: 0.9rem;">
+            ${data.status}
+          </span>
+        </div>
+
+        <div style="background: white; padding: 1.25rem; border-radius: var(--radius); color: var(--dark); margin-top: 1rem; border: 1px solid var(--gray-200);">
+          <h4 style="margin-bottom: 0.75rem; color: var(--gray-800);">Government Cryptographic Checklist:</h4>
+          <ul style="list-style: none; font-size: 0.92rem; line-height: 2;">
+            <li>
+              <strong>BLOCKCHAIN RECORD:</strong>
+              ${checks.blockchain_record_found ? '<span class="badge badge-success">FOUND IN CITIZEN BLOCK #' + (block.block_number ?? '') + '</span>' : '<span class="badge badge-danger">NOT FOUND ON CHAIN</span>'}
+            </li>
+            <li>
+              <strong>CERTIFICATE HASH:</strong>
+              ${checks.hash_match ? '<span class="badge badge-success">MATCH (SHA-256)</span>' : '<span class="badge badge-danger">MISMATCH (TAMPERED)</span>'}
+            </li>
+            ${isFileAudit ? `
+              <li>
+                <strong>GOVERNMENT RSA SIGNATURE:</strong>
+                ${checks.signature_provided ? (checks.signature_valid ? '<span class="badge badge-success">VALID (RSA-PSS 2048)</span>' : '<span class="badge badge-danger">INVALID SIGNATURE</span>') : '<span class="badge badge-warning">NOT PROVIDED</span>'}
+              </li>
+            ` : `
+              <li>
+                <strong>VERIFICATION METHOD:</strong>
+                <span class="badge badge-info">Public SHA-256 Hash Ledger Lookup</span>
+              </li>
+            `}
+          </ul>
+
+          <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--gray-200); font-size: 0.85rem;">
+            <p><strong>Queried SHA-256 Hash:</strong></p>
+            <p class="hash-pill" style="margin-bottom: 0.5rem;">${checks.certificate_hash || 'N/A'}</p>
+
+            ${checks.blockchain_hash ? `
+              <p><strong>Anchored Blockchain SHA-256:</strong></p>
+              <p class="hash-pill" style="margin-bottom: 0.5rem;">${checks.blockchain_hash}</p>
+            ` : ''}
+
+            ${block.block_number !== undefined ? `
+              <div style="margin-top: 0.75rem; background: var(--gray-100); padding: 0.85rem; border-radius: 6px; line-height: 1.7;">
+                <p><strong>Citizen Account:</strong> <code>${block.citizen_identifier || cert.citizen_identifier || 'N/A'}</code></p>
+                <p><strong>Document ID:</strong> <code>${cert.certificate_id || block.certificate_id || 'N/A'}</code></p>
+                ${cert.certificate_type ? `<p><strong>Document Type:</strong> <code>${cert.certificate_type}</code></p>` : ''}
+                <p><strong>Citizen Block Number:</strong> #${block.block_number}</p>
+                <p><strong>Issuer Authority Key:</strong> <code>${block.issuer_key_id}</code></p>
+                <p><strong>Timestamp (UTC):</strong> ${block.timestamp}</p>
+                <p><strong>Merkle Root Hash:</strong> <span class="hash-pill">${block.merkle_root_hash || 'N/A'}</span></p>
+                <p><strong>Block Hash:</strong> <span class="hash-pill">${block.block_hash}</span></p>
+                <p><strong>Previous Block Hash:</strong> <span class="hash-pill">${block.previous_hash}</span></p>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    const tabParam = new URLSearchParams(window.location.search).get('tab');
+    if (tabParam === 'verify' || window.location.hash === '#tab-verify') {
+      switchGovTab('verify');
+    } else if (tabParam === 'ledger' || window.location.hash === '#tab-ledger') {
+      switchGovTab('ledger');
+    } else {
+      loadGovRequests();
+    }
+  </script>
+</body>
+</html>

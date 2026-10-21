@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  python-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: cert_chain_python
+    restart: unless-stopped
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5001
+    volumes:
+      - ./storage:/app/storage
+    expose:
+      - "5001"
+    networks:
+      - cert_network
+
+  web-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: cert_chain_backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - PYTHON_SERVICE_URL=http://python-service:5001
+      - JWT_SECRET=super_secret_national_blockchain_key_2026_change_in_production
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      - python-service
+    networks:
+      - cert_network
+
+networks:
+  cert_network:
+    driver: bridge

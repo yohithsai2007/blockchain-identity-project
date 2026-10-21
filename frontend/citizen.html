@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citizen Digital Services - National Identity Verification</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="top-tricolour-ribbon"></div>
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <span class="brand-badge">CITIZEN</span>
+      <span>National Digital Identity Portal</span>
+    </a>
+    <div class="nav-links">
+      <!-- Generated strictly by updateNav() in app.js -->
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Header Banner -->
+    <div class="card" style="border-left: 5px solid var(--saffron); background: linear-gradient(135deg, #ffffff 0%, #fffbf5 100%);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 class="card-title">🇮🇳 Citizen Identity Services & Digital Locker</h2>
+          <p class="card-subtitle" style="margin-bottom: 0;">
+            Apply for official Indian identity documents, track your application history, and access your <strong>Public SHA-256 Hash</strong> for employer verification.
+          </p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchCitizenTab('apply')">📝 Apply for Identity Card</button>
+        <button class="tab-btn" onclick="switchCitizenTab('requests')">⏳ Track Applications (<span id="req-count">0</span>)</button>
+        <button class="tab-btn" onclick="switchCitizenTab('certs')">📜 My Verified Cards & Public Hash (<span id="cert-count">0</span>)</button>
+      </div>
+    </div>
+
+    <!-- TAB 1: APPLY FOR IDENTITY CARD -->
+    <div id="tab-apply" class="citizen-tab-content">
+      <div class="card">
+        <h3 class="card-title">📝 Apply for an Identity Document</h3>
+        <p class="card-subtitle">Select the card type below to view the specific required fields.</p>
+
+        <div id="apply-status" style="display: none; padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; font-size: 0.92rem;"></div>
+
+        <form id="apply-card-form">
+          <!-- Card Selection Tiles -->
+          <div class="form-group">
+            <label class="form-label" style="font-size: 0.95rem; margin-bottom: 0.6rem;">1. Select Card Type *</label>
+            <div class="grid-4" id="card-tiles-container">
+              <div class="card-type-tile selected" onclick="selectCardType('Aadhaar Card', this)">
+                <div class="tile-icon">🪪</div>
+                <div class="tile-title">Aadhaar Card</div>
+                <div class="tile-desc">UIDAI 12-Digit Unique Identity</div>
+              </div>
+              <div class="card-type-tile" onclick="selectCardType('PAN Card', this)">
+                <div class="tile-icon">💳</div>
+                <div class="tile-title">PAN Card</div>
+                <div class="tile-desc">Income Tax Permanent Account</div>
+              </div>
+              <div class="card-type-tile" onclick="selectCardType('Voter ID (EPIC)', this)">
+                <div class="tile-icon">🗳️</div>
+                <div class="tile-title">Voter ID (EPIC)</div>
+                <div class="tile-desc">Election Commission Elector Card</div>
+              </div>
+              <div class="card-type-tile" onclick="selectCardType('Driving License', this)">
+                <div class="tile-icon">🚗</div>
+                <div class="tile-title">Driving Licence</div>
+                <div class="tile-desc">MoRTH Transport Authority</div>
+              </div>
+            </div>
+            <input type="hidden" id="selected-card-type" value="Aadhaar Card" required>
+          </div>
+
+          <!-- Section 1: Common Personal Details -->
+          <div style="margin: 1.75rem 0 1rem 0; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+            <h4 style="color: var(--primary); font-size: 1.05rem;">2. Personal & Contact Details</h4>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="applicant-name">Full Name (As on official records) *</label>
+              <input type="text" id="applicant-name" class="form-control" placeholder="e.g. Rahul Sharma" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="applicant-father">Father's / Guardian's Full Name *</label>
+              <input type="text" id="applicant-father" class="form-control" placeholder="e.g. Ramesh Sharma" required>
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="form-group">
+              <label class="form-label" for="applicant-phone">Mobile Phone Number (+91) *</label>
+              <input type="tel" id="applicant-phone" class="form-control" placeholder="10-digit mobile" pattern="[0-9]{10}" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="applicant-email">Email Address *</label>
+              <input type="email" id="applicant-email" class="form-control" placeholder="e.g. rahul@example.com" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="applicant-dob">Date of Birth *</label>
+              <input type="date" id="applicant-dob" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="applicant-state">State / Union Territory *</label>
+              <select id="applicant-state" class="form-control" required>
+                <option value="">-- Select State / Union Territory --</option>
+                <!-- All 28 Indian States -->
+                <optgroup label="States">
+                  <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                  <option value="Assam">Assam</option>
+                  <option value="Bihar">Bihar</option>
+                  <option value="Chhattisgarh">Chhattisgarh</option>
+                  <option value="Goa">Goa</option>
+                  <option value="Gujarat">Gujarat</option>
+                  <option value="Haryana">Haryana</option>
+                  <option value="Himachal Pradesh">Himachal Pradesh</option>
+                  <option value="Jharkhand">Jharkhand</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Kerala">Kerala</option>
+                  <option value="Madhya Pradesh">Madhya Pradesh</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Manipur">Manipur</option>
+                  <option value="Meghalaya">Meghalaya</option>
+                  <option value="Mizoram">Mizoram</option>
+                  <option value="Nagaland">Nagaland</option>
+                  <option value="Odisha">Odisha</option>
+                  <option value="Punjab">Punjab</option>
+                  <option value="Rajasthan">Rajasthan</option>
+                  <option value="Sikkim">Sikkim</option>
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Telangana">Telangana</option>
+                  <option value="Tripura">Tripura</option>
+                  <option value="Uttar Pradesh">Uttar Pradesh</option>
+                  <option value="Uttarakhand">Uttarakhand</option>
+                  <option value="West Bengal">West Bengal</option>
+                </optgroup>
+                <!-- All 8 Union Territories -->
+                <optgroup label="Union Territories">
+                  <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                  <option value="Chandigarh">Chandigarh</option>
+                  <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                  <option value="Delhi (NCT)">Delhi (National Capital Territory)</option>
+                  <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                  <option value="Ladakh">Ladakh</option>
+                  <option value="Lakshadweep">Lakshadweep</option>
+                  <option value="Puducherry">Puducherry</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="applicant-address">Permanent Residential Address *</label>
+              <input type="text" id="applicant-address" class="form-control" placeholder="House No, Street, City / District, PIN Code" required>
+            </div>
+          </div>
+
+          <!-- Section 2: DYNAMIC CARD-SPECIFIC REQUIREMENTS -->
+          <div style="margin: 1.75rem 0 1rem 0; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+            <h4 style="color: var(--saffron); font-size: 1.05rem;" id="card-specific-section-title">
+              3. Aadhaar Specific Requirements
+            </h4>
+          </div>
+
+          <!-- DYNAMIC FIELDS CONTAINER -->
+          <div id="dynamic-card-fields">
+            <!-- Will be rendered dynamically based on selected card -->
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label" for="applicant-purpose">Purpose of Document Request *</label>
+            <input type="text" id="applicant-purpose" class="form-control" placeholder="e.g. Official Employment Verification, Banking KYC, Academic Admissions" required>
+          </div>
+
+          <button type="submit" id="btn-submit-card" class="btn btn-saffron" style="padding: 0.9rem 2.25rem; font-size: 1rem; margin-top: 0.5rem;">
+            Submit Request to Government Authority &rarr;
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- TAB 2: TRACK APPLICATIONS HISTORY -->
+    <div id="tab-requests" class="citizen-tab-content" style="display: none;">
+      <div class="card">
+        <h3 class="card-title">⏳ My Application History & Verification Status</h3>
+        <p class="card-subtitle">Real-time status updates from government verification authorities</p>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>App ID</th>
+                <th>Card Type</th>
+                <th>Applicant Contact</th>
+                <th>State & Address</th>
+                <th>Submitted On</th>
+                <th>Status</th>
+                <th>Government Decision / Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="citizen-requests-tbody">
+              <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading application history...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: MY VERIFIED CARDS & PUBLIC HASH -->
+    <div id="tab-certs" class="citizen-tab-content" style="display: none;">
+      <div class="card">
+        <h3 class="card-title">📜 Verified Identity Cards & Public Blockchain Hashes</h3>
+        <p class="card-subtitle">
+          These documents are digitally signed and immutably anchored to your personal citizen block on the blockchain. You can provide your <strong>Public SHA-256 Hash</strong> to employers or institutions.
+        </p>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Document ID</th>
+                <th>Identity Card</th>
+                <th>Issued Date</th>
+                <th>Public SHA-256 Hash (For Verification)</th>
+                <th>Blockchain Status</th>
+                <th>Official Document Actions</th>
+              </tr>
+            </thead>
+            <tbody id="citizen-certs-tbody">
+              <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading your cards...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quick Employer Instructions Card -->
+      <div class="card" style="background: var(--india-green-light); border: 1.5px solid var(--india-green);">
+        <h4 style="color: var(--india-green); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>💡</span> How to share your credentials for verification:
+        </h4>
+        <div class="grid-2" style="margin-top: 0.85rem; gap: 1rem;">
+          <div style="background: white; padding: 1.15rem; border-radius: 8px; border: 1px solid #bbf7d0;">
+            <strong style="color: var(--primary);">Option 1: 1-Click Public Hash Sharing (Fastest)</strong>
+            <p style="font-size: 0.88rem; color: var(--gray-600); margin-top: 0.35rem;">
+              Click the <strong>📋 Copy</strong> button next to your document's SHA-256 hash above. Send this 64-character hash to your employer or agency. They can verify your official record directly without needing your physical documents.
+            </p>
+          </div>
+          <div style="background: white; padding: 1.15rem; border-radius: 8px; border: 1px solid #bbf7d0;">
+            <strong style="color: var(--primary);">Option 2: Download Official Signed PDF</strong>
+            <p style="font-size: 0.88rem; color: var(--gray-600); margin-top: 0.35rem;">
+              Download the official PDF document and provide it to the verifying authority. The document is digitally signed by the government and contains cryptographic hashes.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>National Blockchain Identity Verification Portal &copy; 2026 | Built for Indian Digital Credentials</p>
+  </footer>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const user = getUser();
+    if (!user || user.role !== 'citizen') {
+      alert('Please log in with a citizen account.');
+      window.location.href = '/login.html';
+    } else {
+      document.getElementById('applicant-name').value = user.fullName || '';
+      document.getElementById('applicant-email').value = user.email || (user.username ? (user.username + '@citizen.in') : '');
+    }
+
+    // Dynamic field configurations for each card type
+    function renderCardSpecificFields(cardType) {
+      const container = document.getElementById('dynamic-card-fields');
+      const title = document.getElementById('card-specific-section-title');
+
+      if (cardType === 'Aadhaar Card') {
+        title.textContent = '3. Aadhaar Verification Details (UIDAI)';
+        container.innerHTML = `
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="spec-gender">Gender *</label>
+              <select id="spec-gender" class="form-control" required>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Transgender">Transgender</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="spec-enrolment">NPR / Biometric Enrolment Number (Optional)</label>
+              <input type="text" id="spec-enrolment" class="form-control" placeholder="14-digit enrolment ID or leave blank">
+            </div>
+          </div>
+        `;
+      } else if (cardType === 'PAN Card') {
+        title.textContent = '3. PAN Card Specific Requirements (Income Tax Department)';
+        container.innerHTML = `
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="spec-aadhar-ref">Linked 12-Digit Aadhaar Number *</label>
+              <input type="text" id="spec-aadhar-ref" class="form-control" placeholder="12-digit Aadhaar Number (XXXX-XXXX-XXXX)" pattern="[0-9]{12}" title="12-digit Aadhaar number required for PAN" required>
+              <small style="color:var(--gray-600);">Section 139AA of Income Tax Act mandates Aadhaar linking for PAN issuance.</small>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="spec-income-src">Source of Income Category *</label>
+              <select id="spec-income-src" class="form-control" required>
+                <option value="Salaried Individual">Salaried Individual</option>
+                <option value="Business / Professional">Business / Professional</option>
+                <option value="Student / No Direct Income">Student / No Direct Income</option>
+                <option value="Other Sources">Other Sources</option>
+              </select>
+            </div>
+          </div>
+        `;
+      } else if (cardType === 'Voter ID (EPIC)') {
+        title.textContent = '3. Voter ID / EPIC Requirements (Election Commission of India)';
+        container.innerHTML = `
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="spec-aadhar-ref">Linked 12-Digit Aadhaar Number *</label>
+              <input type="text" id="spec-aadhar-ref" class="form-control" placeholder="12-digit Aadhaar Number (Form 6B)" pattern="[0-9]{12}" required>
+              <small style="color:var(--gray-600);">Electoral roll authentication under Election Commission norms.</small>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="spec-constituency">Assembly Constituency Name / District *</label>
+              <input type="text" id="spec-constituency" class="form-control" placeholder="e.g. Pune City / Ward 14" required>
+            </div>
+          </div>
+        `;
+      } else if (cardType === 'Driving License') {
+        title.textContent = '3. Driving Licence Requirements (Ministry of Road Transport & Highways)';
+        container.innerHTML = `
+          <div class="grid-3">
+            <div class="form-group">
+              <label class="form-label" for="spec-aadhar-ref">Linked 12-Digit Aadhaar Number *</label>
+              <input type="text" id="spec-aadhar-ref" class="form-control" placeholder="12-digit Aadhaar Number" pattern="[0-9]{12}" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="spec-vehicle-class">Vehicle Class Category *</label>
+              <select id="spec-vehicle-class" class="form-control" required>
+                <option value="MCWG (Motorcycle with Gear)">MCWG (Motorcycle with Gear)</option>
+                <option value="LMV (Light Motor Vehicle - Car)">LMV (Light Motor Vehicle - Car)</option>
+                <option value="MCWG + LMV (Both Two & Four Wheeler)">MCWG + LMV (Two & Four Wheeler)</option>
+                <option value="Commercial / Transport">Commercial / Transport</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="spec-blood-group">Blood Group *</label>
+              <select id="spec-blood-group" class="form-control" required>
+                <option value="O+">O Positive (O+)</option>
+                <option value="O-">O Negative (O-)</option>
+                <option value="A+">A Positive (A+)</option>
+                <option value="A-">A Negative (A-)</option>
+                <option value="B+">B Positive (B+)</option>
+                <option value="B-">B Negative (B-)</option>
+                <option value="AB+">AB Positive (AB+)</option>
+                <option value="AB-">AB Negative (AB-)</option>
+              </select>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function selectCardType(typeName, tileElem) {
+      document.querySelectorAll('.card-type-tile').forEach(t => t.classList.remove('selected'));
+      tileElem.classList.add('selected');
+      document.getElementById('selected-card-type').value = typeName;
+      renderCardSpecificFields(typeName);
+    }
+
+    function switchCitizenTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.citizen-tab-content').forEach(c => c.style.display = 'none');
+
+      if (tabName === 'apply') {
+        event.target.classList.add('active');
+        document.getElementById('tab-apply').style.display = 'block';
+      } else if (tabName === 'requests') {
+        event.target.classList.add('active');
+        document.getElementById('tab-requests').style.display = 'block';
+        loadCitizenRequests();
+      } else if (tabName === 'certs') {
+        event.target.classList.add('active');
+        document.getElementById('tab-certs').style.display = 'block';
+        loadCitizenCerts();
+      }
+    }
+
+    // Form Submission
+    document.getElementById('apply-card-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const cardType = document.getElementById('selected-card-type').value;
+      const fullName = document.getElementById('applicant-name').value.trim();
+      const fatherName = document.getElementById('applicant-father').value.trim();
+      const phone = document.getElementById('applicant-phone').value.trim();
+      const email = document.getElementById('applicant-email').value.trim();
+      const dob = document.getElementById('applicant-dob').value;
+      const state = document.getElementById('applicant-state').value;
+      const address = document.getElementById('applicant-address').value.trim();
+      const purpose = document.getElementById('applicant-purpose').value.trim();
+
+      // Collect specific details
+      let detailsObj = {};
+      const aadharRef = document.getElementById('spec-aadhar-ref');
+      if (aadharRef) detailsObj.linked_aadhar = aadharRef.value.trim();
+
+      const gender = document.getElementById('spec-gender');
+      if (gender) detailsObj.gender = gender.value;
+
+      const incomeSrc = document.getElementById('spec-income-src');
+      if (incomeSrc) detailsObj.income_source = incomeSrc.value;
+
+      const constName = document.getElementById('spec-constituency');
+      if (constName) detailsObj.constituency = constName.value.trim();
+
+      const vehClass = document.getElementById('spec-vehicle-class');
+      if (vehClass) detailsObj.vehicle_class = vehClass.value;
+
+      const bloodGrp = document.getElementById('spec-blood-group');
+      if (bloodGrp) detailsObj.blood_group = bloodGrp.value;
+
+      const btn = document.getElementById('btn-submit-card');
+      const statusDiv = document.getElementById('apply-status');
+
+      btn.disabled = true;
+      btn.textContent = 'Submitting Request...';
+      statusDiv.style.display = 'none';
+
+      try {
+        const res = await apiRequest('/citizen/apply', {
+          method: 'POST',
+          body: {
+            certificate_type: cardType,
+            full_name: fullName,
+            father_name: fatherName,
+            phone_number: phone,
+            email: email,
+            date_of_birth: dob,
+            state_region: state,
+            address: address,
+            id_number_hint: aadharRef ? aadharRef.value.trim() : '',
+            purpose: purpose,
+            details: JSON.stringify(detailsObj)
+          }
+        });
+
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = 'var(--success-bg)';
+        statusDiv.style.border = '1px solid var(--success)';
+        statusDiv.style.color = 'var(--success)';
+        statusDiv.innerHTML = `
+          <strong>🎉 Application #${res.request.id} Submitted Successfully!</strong><br>
+          Your application for <strong>${res.request.certificate_type}</strong> has been transmitted to the Government Authority for verification.
+        `;
+
+        document.getElementById('applicant-purpose').value = '';
+        loadCitizenRequests();
+      } catch (err) {
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = 'var(--danger-bg)';
+        statusDiv.style.border = '1px solid var(--danger)';
+        statusDiv.style.color = 'var(--danger)';
+        statusDiv.textContent = 'Error submitting application: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Submit Request to Government Authority →';
+      }
+    });
+
+    async function loadCitizenRequests() {
+      try {
+        const data = await apiRequest('/citizen/my-requests');
+        const tbody = document.getElementById('citizen-requests-tbody');
+        document.getElementById('req-count').textContent = data.requests.length;
+
+        if (data.requests.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--gray-600); padding: 2rem;">No applications submitted yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.requests.map(r => {
+          let badgeClass = 'badge-warning';
+          let statusText = '⏳ PENDING REVIEW';
+          if (r.status === 'APPROVED') {
+            badgeClass = 'badge-success';
+            statusText = '✅ APPROVED & ISSUED';
+          } else if (r.status === 'REJECTED') {
+            badgeClass = 'badge-danger';
+            statusText = '❌ DECLINED';
+          }
+
+          return `
+            <tr>
+              <td><strong>#REQ-${r.id}</strong></td>
+              <td><strong>${r.certificate_type}</strong></td>
+              <td style="font-size: 0.85rem;">
+                ${r.phone_number ? `📞 ${r.phone_number}<br>` : ''}
+                ${r.email ? `✉️ ${r.email}` : ''}
+              </td>
+              <td style="font-size: 0.85rem;">
+                <strong>${r.state_region || 'N/A'}</strong><br>
+                <small style="color:var(--gray-600);">${r.address ? r.address.substring(0, 30) + '...' : ''}</small>
+              </td>
+              <td style="font-size: 0.82rem; color: var(--gray-600);">${r.created_at}</td>
+              <td><span class="badge ${badgeClass}">${statusText}</span></td>
+              <td style="font-size: 0.88rem;">
+                ${r.status === 'APPROVED' ? `<span style="color: var(--india-green); font-weight:700;">Issued: <code>${r.certificate_id}</code></span>` : (r.rejection_reason ? `<span style="color: var(--danger); font-weight:500;">Reason: ${r.rejection_reason}</span>` : 'Awaiting government authority verification')}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadCitizenCerts() {
+      try {
+        const data = await apiRequest('/citizen/my-certificates');
+        const tbody = document.getElementById('citizen-certs-tbody');
+        document.getElementById('cert-count').textContent = data.certificates.length;
+
+        if (data.certificates.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--gray-600); padding: 2rem;">No cards issued yet. Once your application is reviewed and accepted by the government, your official card and Public Hash will appear here.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.certificates.map(c => `
+          <tr>
+            <td><code>${c.certificate_id}</code></td>
+            <td><strong>${c.certificate_type}</strong></td>
+            <td>${c.issue_date}</td>
+            <td>
+              <span class="hash-pill" title="${c.certificate_hash}">${c.certificate_hash.substring(0, 18)}...</span>
+              <button class="copy-btn" onclick="copyHash('${c.certificate_hash}', this)">📋 Copy</button>
+            </td>
+            <td><span class="badge badge-success">⛓️ ANCHORED IN YOUR BLOCK</span></td>
+            <td>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button onclick="previewCertificate('${c.certificate_id}', '${c.certificate_type}', '${c.certificate_hash}')" class="btn btn-primary btn-sm" title="Preview official card in browser">
+                  👁️ Preview
+                </button>
+                <button onclick="downloadCert('${c.certificate_id}')" class="btn btn-outline btn-sm" title="Save PDF to device">
+                  ⬇️ Download
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function copyHash(hash, btn) {
+      navigator.clipboard.writeText(hash).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.style.background = '#86efac';
+        setTimeout(() => {
+          btn.textContent = orig;
+          btn.style.background = '';
+        }, 2000);
+      });
+    }
+
+    async function downloadCert(certId) {
+      try {
+        const token = getToken();
+        const apiBase = window.API_BASE || '/api';
+        const response = await fetch(`${apiBase}/certificates/download/${certId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to download certificate document');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${certId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // Initialize with Aadhaar
+    renderCardSpecificFields('Aadhaar Card');
+    loadCitizenRequests();
+    loadCitizenCerts();
+  </script>
+</body>
+</html>
