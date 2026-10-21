@@ -36,20 +36,26 @@ async function apiRequest(endpoint, options = {}) {
     options.body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers
-  });
+  const targetUrl = `${API_BASE}${endpoint}`;
+  let response;
+  try {
+    response = await fetch(targetUrl, {
+      ...options,
+      headers
+    });
+  } catch (netErr) {
+    throw new Error(`Cannot connect to Backend (${targetUrl}). Please ensure your backend server is running.`);
+  }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    // If forbidden or unauthorized, handle gracefully
-    if (response.status === 401 || response.status === 403) {
-      if (window.location.pathname.includes('security.html') || window.location.pathname.includes('government.html')) {
-        console.warn('Unauthorized access detected');
-      }
+    if (response.status === 404) {
+      throw new Error(`Endpoint not found (404) at ${targetUrl}. Please ensure your Render backend URL is configured.`);
     }
-    throw new Error(data.error || 'Server error occurred');
+    if (response.status === 502 || response.status === 503) {
+      throw new Error('Render backend is currently waking up (cold start). Please wait ~25 seconds and try again.');
+    }
+    throw new Error(data.error || `Server responded with status ${response.status}`);
   }
   return data;
 }
