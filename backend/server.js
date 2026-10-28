@@ -11,7 +11,7 @@ const { db, initDatabase, logAudit } = require('./database');
 const { authenticateToken, requireRole, JWT_SECRET } = require('./middleware/auth');
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000;
 const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL || 'http://127.0.0.1:5001';
 
 // Initialize DB schema & seed data
