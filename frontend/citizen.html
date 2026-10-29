@@ -493,9 +493,13 @@
         }
 
         tbody.innerHTML = data.requests.map(r => {
+          const isRevoked = (r.status === 'REVOKED' || r.cert_status === 'REVOKED');
           let badgeClass = 'badge-warning';
           let statusText = '⏳ PENDING REVIEW';
-          if (r.status === 'APPROVED') {
+          if (isRevoked) {
+            badgeClass = 'badge-danger';
+            statusText = '🛑 REVOKED';
+          } else if (r.status === 'APPROVED') {
             badgeClass = 'badge-success';
             statusText = '✅ APPROVED & ISSUED';
           } else if (r.status === 'REJECTED') {
@@ -504,7 +508,7 @@
           }
 
           return `
-            <tr>
+            <tr style="${isRevoked ? 'background: #fff8f8;' : ''}">
               <td><strong>#REQ-${r.id}</strong></td>
               <td><strong>${r.certificate_type}</strong></td>
               <td style="font-size: 0.85rem;">
@@ -518,7 +522,12 @@
               <td style="font-size: 0.82rem; color: var(--gray-600);">${r.created_at}</td>
               <td><span class="badge ${badgeClass}">${statusText}</span></td>
               <td style="font-size: 0.88rem;">
-                ${r.status === 'APPROVED' ? `<span style="color: var(--india-green); font-weight:700;">Issued: <code>${r.certificate_id}</code></span>` : (r.rejection_reason ? `<span style="color: var(--danger); font-weight:500;">Reason: ${r.rejection_reason}</span>` : 'Awaiting government authority verification')}
+                ${isRevoked ? `
+                  <span style="color: var(--danger); font-weight:700;">Document Revoked: <code>${r.certificate_id}</code></span><br>
+                  <small style="color: var(--danger); font-weight:600;">Reason: ${r.cert_revocation_reason || r.rejection_reason || 'Revoked by authority'}</small>
+                ` : (r.status === 'APPROVED' ? `
+                  <span style="color: var(--india-green); font-weight:700;">Issued: <code>${r.certificate_id}</code></span>
+                ` : (r.rejection_reason ? `<span style="color: var(--danger); font-weight:500;">Reason: ${r.rejection_reason}</span>` : 'Awaiting government authority verification'))}
               </td>
             </tr>
           `;
@@ -539,28 +548,41 @@
           return;
         }
 
-        tbody.innerHTML = data.certificates.map(c => `
-          <tr>
-            <td><code>${c.certificate_id}</code></td>
-            <td><strong>${c.certificate_type}</strong></td>
-            <td>${c.issue_date}</td>
-            <td>
-              <span class="hash-pill" title="${c.certificate_hash}">${c.certificate_hash.substring(0, 18)}...</span>
-              <button class="copy-btn" onclick="copyHash('${c.certificate_hash}', this)">📋 Copy</button>
-            </td>
-            <td><span class="badge badge-success">⛓️ ANCHORED IN YOUR BLOCK</span></td>
-            <td>
-              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                <button onclick="previewCertificate('${c.certificate_id}', '${c.certificate_type}', '${c.certificate_hash}')" class="btn btn-primary btn-sm" title="Preview official card in browser">
-                  👁️ Preview
-                </button>
-                <button onclick="downloadCert('${c.certificate_id}')" class="btn btn-outline btn-sm" title="Save PDF to device">
-                  ⬇️ Download
-                </button>
-              </div>
-            </td>
-          </tr>
-        `).join('');
+        tbody.innerHTML = data.certificates.map(c => {
+          const isRevoked = (c.status === 'REVOKED');
+          return `
+            <tr style="${isRevoked ? 'background: #fff8f8;' : ''}">
+              <td>
+                <code>${c.certificate_id}</code>
+                ${isRevoked ? '<br><span class="badge badge-danger" style="font-size:0.72rem;">REVOKED</span>' : ''}
+              </td>
+              <td><strong>${c.certificate_type}</strong></td>
+              <td>${c.issue_date}</td>
+              <td>
+                <span class="hash-pill" title="${c.certificate_hash}">${c.certificate_hash.substring(0, 18)}...</span>
+                <button class="copy-btn" onclick="copyHash('${c.certificate_hash}', this)">📋 Copy</button>
+              </td>
+              <td>
+                ${isRevoked ? `
+                  <span class="badge badge-danger">🛑 REVOKED ON BLOCKCHAIN</span><br>
+                  <small style="color: var(--danger); font-weight:600;">Reason: ${c.revocation_reason || 'Revoked by authority'}</small>
+                ` : `
+                  <span class="badge badge-success">⛓️ ANCHORED IN YOUR BLOCK</span>
+                `}
+              </td>
+              <td>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  <button onclick="previewCertificate('${c.certificate_id}', '${c.certificate_type}', '${c.certificate_hash}')" class="btn btn-primary btn-sm" title="Preview official card in browser">
+                    👁️ Preview
+                  </button>
+                  <button onclick="downloadCert('${c.certificate_id}')" class="btn btn-outline btn-sm" title="Save PDF to device">
+                    ⬇️ Download
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch (err) {
         console.error(err);
       }

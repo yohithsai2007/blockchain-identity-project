@@ -215,10 +215,12 @@
 
       const isVerified = (data.status === 'VERIFIED');
       const isNotFound = (data.status === 'NOT_FOUND');
+      const isRevoked = (data.status === 'REVOKED');
 
       let boxClass = 'verify-rejected';
       if (isVerified) boxClass = 'verify-verified';
       else if (isNotFound) boxClass = 'verify-warning';
+      else if (isRevoked) boxClass = 'verify-rejected';
 
       resultContainer.className = `verify-result-box ${boxClass}`;
 
@@ -235,12 +237,29 @@
           </span>
         </div>
 
+        ${isRevoked ? `
+          <div style="background: #fef2f2; border: 1.5px solid #ef4444; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; color: #991b1b;">
+            <h4 style="margin: 0 0 0.4rem 0; color: #b91c1c; display: flex; align-items: center; gap: 0.4rem;">
+              <span>⚠️</span> CRITICAL SECURITY ALERT: DOCUMENT HAS BEEN REVOKED
+            </h4>
+            <p style="margin: 0 0 0.35rem 0; font-size: 0.92rem;">
+              This identity document was officially revoked and marked invalid on the Sovereign Citizen Blockchain ledger by the issuing government authority.
+            </p>
+            ${cert.revocation_reason ? `<p style="margin: 0 0 0.2rem 0; font-size: 0.88rem;"><strong>Official Revocation Reason:</strong> ${cert.revocation_reason}</p>` : ''}
+            ${cert.revocation_date ? `<p style="margin: 0; font-size: 0.82rem; color: #7f1d1d;"><strong>Revocation Timestamp (UTC):</strong> ${cert.revocation_date}</p>` : ''}
+          </div>
+        ` : ''}
+
         <div style="background: white; padding: 1.25rem; border-radius: var(--radius); color: var(--dark); margin-top: 1rem; border: 1px solid var(--gray-200);">
           <h4 style="margin-bottom: 0.75rem; color: var(--gray-800);">Cryptographic Audit Checklist:</h4>
           <ul style="list-style: none; font-size: 0.92rem; line-height: 2;">
             <li>
               <strong>BLOCKCHAIN RECORD:</strong>
               ${checks.blockchain_record_found ? '<span class="badge badge-success">FOUND IN CITIZEN BLOCK #' + (block.block_number ?? '') + '</span>' : '<span class="badge badge-danger">NOT FOUND ON CHAIN</span>'}
+            </li>
+            <li>
+              <strong>DOCUMENT STATUS:</strong>
+              ${isRevoked ? '<span class="badge badge-danger">🛑 OFFICIALLY REVOKED</span>' : '<span class="badge badge-success">✅ ACTIVE (NOT REVOKED)</span>'}
             </li>
             <li>
               <strong>CERTIFICATE HASH:</strong>

@@ -80,7 +80,8 @@ def issue_certificate():
         "certificate_hash": cert_hash,
         "signature": signature_base64,
         "issue_date": issue_date,
-        "issuer_key_id": ISSUER_KEY_ID
+        "issuer_key_id": ISSUER_KEY_ID,
+        "status": "ACTIVE"
     }
 
     block = blockchain.add_or_update_citizen_certificate(

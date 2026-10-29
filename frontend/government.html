@@ -50,7 +50,7 @@
       </div>
 
       <!-- Quick Metrics Grid -->
-      <div class="grid-4" style="margin-top: 1.25rem;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-top: 1.25rem;">
         <div class="stats-card">
           <div>
             <div style="font-size: 0.82rem; color: var(--gray-600); font-weight: 600;">PENDING REQUESTS</div>
@@ -67,14 +67,21 @@
         </div>
         <div class="stats-card">
           <div>
+            <div style="font-size: 0.82rem; color: var(--gray-600); font-weight: 600;">REVOKED ON CHAIN</div>
+            <div class="count" id="stat-revoked" style="color: var(--danger);">0</div>
+          </div>
+          <div style="font-size: 2rem;">🛑</div>
+        </div>
+        <div class="stats-card">
+          <div>
             <div style="font-size: 0.82rem; color: var(--gray-600); font-weight: 600;">DECLINED REQUESTS</div>
-            <div class="count" id="stat-rejected" style="color: var(--danger);">0</div>
+            <div class="count" id="stat-rejected" style="color: var(--gray-600);">0</div>
           </div>
           <div style="font-size: 2rem;">❌</div>
         </div>
         <div class="stats-card">
           <div>
-            <div style="font-size: 0.82rem; color: var(--gray-600); font-weight: 600;">TOTAL BLOCKCHAIN BLOCKS</div>
+            <div style="font-size: 0.82rem; color: var(--gray-600); font-weight: 600;">BLOCKCHAIN BLOCKS</div>
             <div class="count" id="stat-blocks" style="color: var(--primary);">0</div>
           </div>
           <div style="font-size: 2rem;">⛓️</div>
@@ -99,11 +106,12 @@
             <h3 class="card-title">📥 Citizen Identity Applications Queue & History</h3>
             <p class="card-subtitle" style="margin-bottom: 0;">Review applicant information, contact details, and decide whether to accept or decline.</p>
           </div>
-          <!-- Filter pills: All, Pending, Approved, Rejected -->
-          <div style="display: flex; gap: 0.5rem;">
+          <!-- Filter pills: All, Pending, Approved, Revoked, Rejected -->
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button class="filter-pill active" onclick="filterRequests('ALL', this)">All History</button>
             <button class="filter-pill" onclick="filterRequests('PENDING', this)">⏳ Pending Only</button>
             <button class="filter-pill" onclick="filterRequests('APPROVED', this)">✅ Accepted Only</button>
+            <button class="filter-pill" onclick="filterRequests('REVOKED', this)">🛑 Revoked Only</button>
             <button class="filter-pill" onclick="filterRequests('REJECTED', this)">❌ Declined Only</button>
           </div>
         </div>
@@ -276,11 +284,12 @@
                 <th>Card Category</th>
                 <th>Issue Date</th>
                 <th>Public SHA-256 Hash</th>
-                <th>Action</th>
+                <th>Blockchain Status</th>
+                <th>Authority Actions</th>
               </tr>
             </thead>
             <tbody id="issued-table-body">
-              <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading registry...</td></tr>
+              <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading registry...</td></tr>
             </tbody>
           </table>
         </div>
@@ -334,6 +343,48 @@
       <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
         <button onclick="closeRejectModal()" class="btn btn-outline btn-sm">Cancel</button>
         <button onclick="confirmReject()" class="btn btn-danger btn-sm">Decline Application</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revocation Modal -->
+  <div id="revoke-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box" style="max-width: 520px;">
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+        <span style="font-size: 1.5rem;">🛑</span>
+        <h3 style="margin: 0; color: var(--danger); font-size: 1.25rem;">Revoke Issued Identity Document</h3>
+      </div>
+      <p style="font-size: 0.88rem; color: var(--gray-600); margin-bottom: 1rem;">
+        Revoking marks this credential as permanently invalid on the citizen's blockchain block. Verifiers and employers checking this document or hash will be immediately alerted.
+      </p>
+
+      <div style="background: var(--gray-100); padding: 0.85rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.88rem; border-left: 3px solid var(--danger);">
+        <p style="margin: 0 0 0.3rem 0;"><strong>Document ID:</strong> <code id="revoke-modal-cert-id"></code></p>
+        <p style="margin: 0 0 0.3rem 0;"><strong>Citizen Name:</strong> <span id="revoke-modal-citizen"></span></p>
+        <p style="margin: 0;"><strong>Card Category:</strong> <span id="revoke-modal-type"></span></p>
+      </div>
+
+      <input type="hidden" id="revoke-cert-id-input">
+
+      <label class="form-label" style="margin-bottom: 0.4rem;">Select or Type Revocation Reason *</label>
+      <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+        <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.76rem; padding: 0.25rem 0.5rem;" onclick="setRevokeReason('Citizen reported document lost or stolen')">Lost / Stolen</button>
+        <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.76rem; padding: 0.25rem 0.5rem;" onclick="setRevokeReason('Inauthentic or forged supporting credentials detected')">Fraud / Forged Proof</button>
+        <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.76rem; padding: 0.25rem 0.5rem;" onclick="setRevokeReason('Duplicate identity record cancellation')">Duplicate Record</button>
+        <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.76rem; padding: 0.25rem 0.5rem;" onclick="setRevokeReason('Revoked pursuant to statutory government administrative order')">Official Admin Order</button>
+      </div>
+
+      <textarea id="revoke-reason-input" class="form-control" rows="3" placeholder="Enter official reason for revocation..." required></textarea>
+
+      <div style="margin-top: 1rem; padding: 0.75rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.82rem; color: #991b1b;">
+        ⚠️ <strong>Blockchain Notice:</strong> This operation writes to the citizen's block, updates the Merkle root and block hash, cascades downstream blocks, and registers the revocation permanently on the cryptographic ledger.
+      </div>
+
+      <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" onclick="closeRevokeModal()" class="btn btn-outline btn-sm">Cancel</button>
+        <button type="button" id="btn-confirm-revoke" onclick="confirmRevokeCert()" class="btn btn-danger btn-sm">
+          🛑 Confirm Blockchain Revocation
+        </button>
       </div>
     </div>
   </div>
@@ -475,11 +526,15 @@
 
         // Calculate counts
         const pendingCount = allRequestsData.filter(r => r.status === 'PENDING').length;
-        const approvedCount = allRequestsData.filter(r => r.status === 'APPROVED').length;
+        const approvedCount = allRequestsData.filter(r => r.status === 'APPROVED' && r.cert_status !== 'REVOKED').length;
+        const revokedCount = allRequestsData.filter(r => r.status === 'REVOKED' || r.cert_status === 'REVOKED').length;
         const rejectedCount = allRequestsData.filter(r => r.status === 'REJECTED').length;
 
         document.getElementById('stat-pending').textContent = pendingCount;
         document.getElementById('stat-approved').textContent = approvedCount;
+        if (document.getElementById('stat-revoked')) {
+          document.getElementById('stat-revoked').textContent = revokedCount;
+        }
         document.getElementById('stat-rejected').textContent = rejectedCount;
 
         renderRequestsTable();
@@ -493,7 +548,11 @@
       const tbody = document.getElementById('gov-requests-tbody');
       let filtered = allRequestsData;
 
-      if (currentFilter !== 'ALL') {
+      if (currentFilter === 'REVOKED') {
+        filtered = allRequestsData.filter(r => r.status === 'REVOKED' || r.cert_status === 'REVOKED');
+      } else if (currentFilter === 'APPROVED') {
+        filtered = allRequestsData.filter(r => r.status === 'APPROVED' && r.cert_status !== 'REVOKED');
+      } else if (currentFilter !== 'ALL') {
         filtered = allRequestsData.filter(r => r.status === currentFilter);
       }
 
@@ -503,9 +562,13 @@
       }
 
       tbody.innerHTML = filtered.map(r => {
+        const isRevoked = (r.status === 'REVOKED' || r.cert_status === 'REVOKED');
         let badgeClass = 'badge-warning';
         let statusText = '⏳ PENDING';
-        if (r.status === 'APPROVED') {
+        if (isRevoked) {
+          badgeClass = 'badge-danger';
+          statusText = '🛑 REVOKED';
+        } else if (r.status === 'APPROVED') {
           badgeClass = 'badge-success';
           statusText = '✅ ACCEPTED';
         } else if (r.status === 'REJECTED') {
@@ -513,8 +576,11 @@
           statusText = '❌ DECLINED';
         }
 
+        const safeCitizenName = (r.citizen_name || '').replace(/'/g, "\\'");
+        const safeCertType = (r.certificate_type || '').replace(/'/g, "\\'");
+
         return `
-          <tr>
+          <tr style="${isRevoked ? 'background: #fff8f8;' : ''}">
             <td><strong>#REQ-${r.id}</strong></td>
             <td>
               <strong>${r.citizen_name}</strong><br>
@@ -529,6 +595,7 @@
             <td style="font-size: 0.85rem;">
               <strong>Purpose:</strong> ${r.purpose || 'N/A'}
               ${r.rejection_reason ? `<br><small style="color: var(--danger);"><strong>Note:</strong> ${r.rejection_reason}</small>` : ''}
+              ${r.cert_revocation_reason ? `<br><small style="color: var(--danger);"><strong>Revocation:</strong> ${r.cert_revocation_reason}</small>` : ''}
             </td>
             <td style="font-size: 0.8rem; color: var(--gray-600);">${r.created_at}</td>
             <td><span class="badge ${badgeClass}">${statusText}</span></td>
@@ -542,14 +609,29 @@
                     ❌ Decline
                   </button>
                 </div>
-              ` : (r.status === 'APPROVED' ? `
-                <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
-                  <span style="color: var(--india-green); font-weight:700; font-size:0.85rem;">Issued: <code>${r.certificate_id}</code></span>
-                  <button onclick="previewCertificate('${r.certificate_id}', '${r.certificate_type}', '')" class="btn btn-primary btn-sm" style="padding: 0.2rem 0.55rem; font-size: 0.76rem;" title="Preview generated card">
-                    👁️ Preview
-                  </button>
+              ` : (isRevoked ? `
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                  <span style="color: var(--danger); font-weight:700; font-size:0.82rem;">Revoked: <code>${r.certificate_id}</code></span>
+                  <div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.2rem;">
+                    <button onclick="previewCertificate('${r.certificate_id}', '${r.certificate_type}', '')" class="btn btn-primary btn-sm" style="padding: 0.2rem 0.55rem; font-size: 0.76rem;" title="Preview generated card">
+                      👁️ Preview
+                    </button>
+                    <span class="badge badge-secondary" style="font-size:0.72rem;">Revoked</span>
+                  </div>
                 </div>
-              ` : `<span style="color: var(--danger); font-size:0.85rem;">Declined</span>`)}
+              ` : (r.status === 'APPROVED' ? `
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                  <span style="color: var(--india-green); font-weight:700; font-size:0.85rem;">Issued: <code>${r.certificate_id}</code></span>
+                  <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.2rem;">
+                    <button onclick="previewCertificate('${r.certificate_id}', '${r.certificate_type}', '')" class="btn btn-primary btn-sm" style="padding: 0.2rem 0.55rem; font-size: 0.76rem;" title="Preview generated card">
+                      👁️ Preview
+                    </button>
+                    <button onclick="openRevokeModal('${r.certificate_id}', '${safeCitizenName}', '${safeCertType}')" class="btn btn-danger btn-sm" style="padding: 0.2rem 0.55rem; font-size: 0.76rem;" title="Revoke document on blockchain">
+                      🛑 Revoke
+                    </button>
+                  </div>
+                </div>
+              ` : `<span style="color: var(--danger); font-size:0.85rem;">Declined</span>`))}
             </td>
           </tr>
         `;
@@ -638,31 +720,103 @@
         const data = await apiRequest('/certificates/issued');
         const tbody = document.getElementById('issued-table-body');
         if (data.certificates.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--gray-400); padding: 2rem;">No documents issued yet.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--gray-400); padding: 2rem;">No documents issued yet.</td></tr>';
           return;
         }
 
-        tbody.innerHTML = data.certificates.map(c => `
-          <tr>
-            <td><code>${c.certificate_id}</code></td>
-            <td><strong>${c.citizen_name}</strong></td>
-            <td>${c.certificate_type}</td>
-            <td>${c.issue_date}</td>
-            <td><span class="hash-pill" title="${c.certificate_hash}">${c.certificate_hash.substring(0, 18)}...</span></td>
-            <td>
-              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                <button onclick="previewCertificate('${c.certificate_id}', '${c.certificate_type}', '${c.certificate_hash}')" class="btn btn-primary btn-sm" title="Preview card in browser">
-                  👁️ Preview
-                </button>
-                <button onclick="downloadCert('${c.certificate_id}')" class="btn btn-outline btn-sm" title="Download PDF file">
-                  ⬇️ Download
-                </button>
-              </div>
-            </td>
-          </tr>
-        `).join('');
+        tbody.innerHTML = data.certificates.map(c => {
+          const isRevoked = (c.status === 'REVOKED');
+          const safeCitizenName = (c.citizen_name || '').replace(/'/g, "\\'");
+          const safeCertType = (c.certificate_type || '').replace(/'/g, "\\'");
+
+          return `
+            <tr style="${isRevoked ? 'background: #fff8f8;' : ''}">
+              <td><code>${c.certificate_id}</code></td>
+              <td><strong>${c.citizen_name}</strong></td>
+              <td>${c.certificate_type}</td>
+              <td>${c.issue_date}</td>
+              <td><span class="hash-pill" title="${c.certificate_hash}">${c.certificate_hash.substring(0, 18)}...</span></td>
+              <td>
+                ${isRevoked ? `
+                  <span class="badge badge-danger">🛑 REVOKED</span><br>
+                  <small style="color: var(--danger); font-size:0.75rem; font-weight:600;">Reason: ${c.revocation_reason || 'Revoked'}</small><br>
+                  <small style="color: var(--gray-600); font-size:0.72rem;">${(c.revocation_date || '').slice(0, 10)}</small>
+                ` : `
+                  <span class="badge badge-success">✅ ACTIVE</span>
+                `}
+              </td>
+              <td>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  <button onclick="previewCertificate('${c.certificate_id}', '${c.certificate_type}', '${c.certificate_hash}')" class="btn btn-primary btn-sm" title="Preview card in browser">
+                    👁️ Preview
+                  </button>
+                  <button onclick="downloadCert('${c.certificate_id}')" class="btn btn-outline btn-sm" title="Download PDF file">
+                    ⬇️ Download
+                  </button>
+                  ${!isRevoked ? `
+                    <button onclick="openRevokeModal('${c.certificate_id}', '${safeCitizenName}', '${safeCertType}')" class="btn btn-danger btn-sm" title="Revoke this document on blockchain">
+                      🛑 Revoke
+                    </button>
+                  ` : `
+                    <span class="badge badge-secondary" style="font-size:0.75rem; align-self:center;">Revoked</span>
+                  `}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch (e) {
         console.error(e);
+      }
+    }
+
+    function openRevokeModal(certId, citizenName, certType) {
+      document.getElementById('revoke-cert-id-input').value = certId;
+      document.getElementById('revoke-modal-cert-id').textContent = certId;
+      document.getElementById('revoke-modal-citizen').textContent = citizenName || 'N/A';
+      document.getElementById('revoke-modal-type').textContent = certType || 'Identity Document';
+      document.getElementById('revoke-reason-input').value = '';
+      document.getElementById('revoke-modal').style.display = 'flex';
+    }
+
+    function closeRevokeModal() {
+      document.getElementById('revoke-modal').style.display = 'none';
+    }
+
+    function setRevokeReason(reason) {
+      document.getElementById('revoke-reason-input').value = reason;
+    }
+
+    async function confirmRevokeCert() {
+      const certId = document.getElementById('revoke-cert-id-input').value;
+      const reason = document.getElementById('revoke-reason-input').value.trim();
+      const btn = document.getElementById('btn-confirm-revoke');
+
+      if (!reason) {
+        alert('Please specify an official reason for revocation.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Recording on Blockchain...';
+
+      try {
+        const res = await apiRequest(`/certificates/revoke/${certId}`, {
+          method: 'POST',
+          body: { reason }
+        });
+
+        closeRevokeModal();
+        alert(`Success: ${res.message} (Recorded in Citizen Block #${res.revocation.block_number})`);
+        loadIssuedCertificates();
+        loadGovRequests();
+        loadChainStatus();
+        loadGovLedger();
+      } catch (err) {
+        alert('Revocation failed: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🛑 Confirm Blockchain Revocation';
       }
     }
 
@@ -852,10 +1006,12 @@
 
       const isVerified = (data.status === 'VERIFIED');
       const isNotFound = (data.status === 'NOT_FOUND');
+      const isRevoked = (data.status === 'REVOKED');
 
       let boxClass = 'verify-rejected';
       if (isVerified) boxClass = 'verify-verified';
       else if (isNotFound) boxClass = 'verify-warning';
+      else if (isRevoked) boxClass = 'verify-rejected';
 
       container.className = `verify-result-box ${boxClass}`;
 
@@ -872,12 +1028,29 @@
           </span>
         </div>
 
+        ${isRevoked ? `
+          <div style="background: #fef2f2; border: 1.5px solid #ef4444; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; color: #991b1b;">
+            <h4 style="margin: 0 0 0.4rem 0; color: #b91c1c; display: flex; align-items: center; gap: 0.4rem;">
+              <span>⚠️</span> OFFICIAL STATUS: DOCUMENT REVOKED
+            </h4>
+            <p style="margin: 0 0 0.35rem 0; font-size: 0.92rem;">
+              This identity document is officially marked as REVOKED on Citizen Block #${block.block_number ?? 'N/A'}.
+            </p>
+            ${cert.revocation_reason ? `<p style="margin: 0 0 0.2rem 0; font-size: 0.88rem;"><strong>Revocation Reason:</strong> ${cert.revocation_reason}</p>` : ''}
+            ${cert.revocation_date ? `<p style="margin: 0; font-size: 0.82rem; color: #7f1d1d;"><strong>Revocation Date:</strong> ${cert.revocation_date}</p>` : ''}
+          </div>
+        ` : ''}
+
         <div style="background: white; padding: 1.25rem; border-radius: var(--radius); color: var(--dark); margin-top: 1rem; border: 1px solid var(--gray-200);">
           <h4 style="margin-bottom: 0.75rem; color: var(--gray-800);">Government Cryptographic Checklist:</h4>
           <ul style="list-style: none; font-size: 0.92rem; line-height: 2;">
             <li>
               <strong>BLOCKCHAIN RECORD:</strong>
               ${checks.blockchain_record_found ? '<span class="badge badge-success">FOUND IN CITIZEN BLOCK #' + (block.block_number ?? '') + '</span>' : '<span class="badge badge-danger">NOT FOUND ON CHAIN</span>'}
+            </li>
+            <li>
+              <strong>BLOCKCHAIN STATUS:</strong>
+              ${isRevoked ? '<span class="badge badge-danger">🛑 OFFICIALLY REVOKED</span>' : '<span class="badge badge-success">✅ ACTIVE (VALID)</span>'}
             </li>
             <li>
               <strong>CERTIFICATE HASH:</strong>

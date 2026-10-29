@@ -367,6 +367,13 @@ app.post('/api/certificates/revoke/:id', authenticateToken, requireRole('admin')
                 function(dbErr) {
                     if (dbErr) return res.status(500).json({ error: 'Failed to update database status' });
 
+                    // Also update certificate_requests table if applicable
+                    db.run(
+                        'UPDATE certificate_requests SET status = "REVOKED", rejection_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE certificate_id = ?',
+                        [revocationReason, cert.certificate_id],
+                        () => {}
+                    );
+
                     logAudit('CERTIFICATE_REVOKED', req.user.username, req.ip, {
                         cert_id: cert.certificate_id,
                         citizen: cert.citizen_username,
@@ -468,11 +475,13 @@ app.post('/api/citizen/apply', authenticateToken, requireRole('citizen'), (req, 
 // View citizen's own requests
 app.get('/api/citizen/my-requests', authenticateToken, requireRole('citizen'), (req, res) => {
     db.all(`
-        SELECT id, certificate_type, citizen_name, phone_number, email, date_of_birth, state_region,
-               father_name, address, id_number_hint, purpose, details, status, rejection_reason, certificate_id, created_at, updated_at
-        FROM certificate_requests
-        WHERE citizen_id = ?
-        ORDER BY id DESC
+        SELECT r.id, r.certificate_type, r.citizen_name, r.phone_number, r.email, r.date_of_birth, r.state_region,
+               r.father_name, r.address, r.id_number_hint, r.purpose, r.details, r.status, r.rejection_reason, r.certificate_id, r.created_at, r.updated_at,
+               c.status as cert_status, c.revocation_reason as cert_revocation_reason
+        FROM certificate_requests r
+        LEFT JOIN certificates c ON r.certificate_id = c.certificate_id
+        WHERE r.citizen_id = ?
+        ORDER BY r.id DESC
     `, [req.user.id], (err, rows) => {
         if (err) return res.status(500).json({ error: 'Database error' });
         res.json({ requests: rows });
@@ -481,7 +490,7 @@ app.get('/api/citizen/my-requests', authenticateToken, requireRole('citizen'), (
 
 app.get('/api/citizen/my-certificates', authenticateToken, requireRole('citizen'), (req, res) => {
     db.all(`
-        SELECT id, certificate_id, certificate_type, issue_date, certificate_hash, signature, created_at
+        SELECT id, certificate_id, certificate_type, issue_date, certificate_hash, signature, status, revocation_reason, revocation_date, created_at
         FROM certificates
         WHERE citizen_id = ?
         ORDER BY id DESC
@@ -526,18 +535,20 @@ app.get('/api/certificates/download/:id', authenticateToken, (req, res) => {
 
 // List all citizen requests with filtering options
 app.get('/api/admin/requests', authenticateToken, requireRole('admin'), (req, res) => {
-    const statusFilter = req.query.status; // Optional: PENDING, APPROVED, REJECTED
+    const statusFilter = req.query.status; // Optional: PENDING, APPROVED, REJECTED, REVOKED
     let query = `
         SELECT r.id, r.citizen_id, r.citizen_name, r.phone_number, r.email,
                r.date_of_birth, r.state_region, r.father_name, r.address, r.id_number_hint,
                r.certificate_type, r.purpose, r.details,
                r.status, r.rejection_reason, r.certificate_id, r.created_at, r.updated_at,
-               u.email as citizen_account_email
+               u.email as citizen_account_email,
+               c.status as cert_status, c.revocation_reason as cert_revocation_reason
         FROM certificate_requests r
         LEFT JOIN users u ON r.citizen_id = u.id
+        LEFT JOIN certificates c ON r.certificate_id = c.certificate_id
     `;
     const params = [];
-    if (statusFilter && ['PENDING', 'APPROVED', 'REJECTED'].includes(statusFilter.toUpperCase())) {
+    if (statusFilter && ['PENDING', 'APPROVED', 'REJECTED', 'REVOKED'].includes(statusFilter.toUpperCase())) {
         query += ` WHERE r.status = ? `;
         params.push(statusFilter.toUpperCase());
     }
